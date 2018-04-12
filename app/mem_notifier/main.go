@@ -8,9 +8,7 @@ import (
 
 func main() {
 
-	notifier := &mem_notifier.Notifier{
-
-	}
+	notifier := mem_notifier.NewNotifier()
 
 	app := uolo.NewApp(notifier)
 	app.WithHttpServer(notifier).

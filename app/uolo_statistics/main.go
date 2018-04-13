@@ -1,18 +1,16 @@
 package main
 
 import (
-	"artemis/mem_notifier"
 	"artemis/base/uolo"
+	"artemis/statisticians"
 )
 
 
 func main() {
 
-	notifier := &mem_notifier.Notifier{
+	impl := statisticians.NewStatistician()
 
-	}
-
-	app := uolo.NewApp(notifier)
-	app.WithHttpServer(notifier).
+	app := uolo.NewApp(impl)
+	app.WithHttpServer(impl).
 		Run()
 }

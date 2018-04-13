@@ -9,6 +9,12 @@ type (
 	}
 )
 
+func NewStatistician() *Statistician {
+	return &Statistician{
+		handler: &StatisticHandler{},
+	}
+}
+
 func (impl *Statistician) BeforeCliRun() error {
 	return nil
 }
@@ -18,7 +24,7 @@ func (impl *Statistician) OnCliApplicationRun() error {
 }
 
 func (impl *Statistician) Endpoint() string {
-	return "0.0.0.0:3004"
+	return "0.0.0.0:3005"
 }
 func (impl *Statistician) HttpServerName() string {
 	return "Statistician"

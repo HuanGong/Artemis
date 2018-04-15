@@ -1,0 +1,7 @@
+ServerAddress = "127.0.0.1:3005"
+
+[MysqlConfig]
+User = "root"
+Passwd = "gonghuan"
+HostPort = "0.0.0.0:3306"
+DBName = "uolo_mem"

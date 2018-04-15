@@ -1,15 +1,14 @@
 package model
 
-import (
-	"gopkg.in/mgo.v2/bson"
-)
-
 type (
 	User struct {
-		ID        bson.ObjectId `json:"id" bson:"_id,omitempty"`
-		Email     string        `json:"email" bson:"email"`
-		Password  string        `json:"password,omitempty" bson:"password"`
-		Token     string        `json:"token,omitempty" bson:"-"`
-		Followers []string      `json:"followers,omitempty" bson:"followers,omitempty"`
+		Id       string `xorm:"pk" json:"id"`
+		Name     string `xorm:"username"  json:"username" form:"username"`
+		Email    string `xorm:"email" json:"email,omitempty" form:"email"`
+		Password string `xorm:"password" json:"password,omitempty" form:"password"`
 	}
 )
+
+func (u User) TableName() string {
+	return "uolo_users"
+}

@@ -2,27 +2,37 @@ package mem_notifier
 
 import (
 	"github.com/labstack/echo"
-	"io/ioutil"
-	"fmt"
 	"github.com/labstack/echo/middleware"
+	"github.com/go-xorm/xorm"
+	"github.com/go-sql-driver/mysql"
+	"artemis/mem_notifier/model"
+	"github.com/sirupsen/logrus"
+	"github.com/BurntSushi/toml"
+	"github.com/dgrijalva/jwt-go"
+	"encoding/json"
+)
+
+var (
+	conf Config
+	orm  *xorm.Engine
 )
 
 type (
 
-	Config struct {
-		serverAddress string
-	}
-
 	Notifier struct {
-		conf	*Config
 		handler *Handler
 	}
 )
 
 func NewNotifier() *Notifier {
-	return &Notifier {
+	instance :=  &Notifier {
 		handler: &Handler{},
 	}
+	loadConfig()
+
+	initDB()
+
+	return instance
 }
 
 func (notifier *Notifier) BeforeCliRun() error {
@@ -34,16 +44,17 @@ func (notifier *Notifier) OnCliApplicationRun() error {
 }
 
 func (notifier *Notifier) Endpoint() string {
-	return "0.0.0.0:3002"
+	return conf.ServerAddress
 }
 func (notifier *Notifier) HttpServerName() string {
-	return "MemNotifier"
+	return "MemReminder"
 }
 
 func (notifier *Notifier) OnServerInitialized(ec *echo.Echo) error {
 
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey: []byte(key),
+		SigningKey: []byte(JWTSecretkey),
+		Claims:  jwt.MapClaims{},
 		Skipper: func(c echo.Context) bool {
 			// Skip authentication for and signup login requests
 			if c.Path() == "/login" || c.Path() == "/signup" {
@@ -53,25 +64,49 @@ func (notifier *Notifier) OnServerInitialized(ec *echo.Echo) error {
 		},
 	}))
 
-	ec.GET("/", HandleWebHome)
 	ec.POST("/signup", notifier.handler.SignUp)
-	//ec.GET("/signup", notifier.handler.SignUp)
 	ec.POST("/login", notifier.handler.Login)
+	ec.POST("/re-auth", notifier.handler.AuthRefresh)
+	ec.POST("/check-auth", notifier.handler.AuthTest)
 	return nil
 }
 
-func HandleWebHome(ctx echo.Context) error {
-	bytes, err := ioutil.ReadFile("/home/gh/www/index.html")
-
-
-	fmt.Println(string(bytes))
-	if err != nil {
-		fmt.Println("return not find")
-		ctx.String(404,"")
-		return nil
+func loadConfig() {
+	if _, err := toml.DecodeFile("config.toml", &conf); err != nil {
+		logrus.Panicln(err.Error())
 	}
-	fmt.Println("return html file")
-	ctx.HTML(200, string(bytes))
-	return nil
+	jc, _ := json.Marshal(&conf)
+	logrus.Infoln("load config.toml", string(jc))
 }
 
+func initDB() {
+
+	connectStr := &mysql.Config{
+		User:   conf.MysqlConfig.User,
+		Passwd: conf.MysqlConfig.Passwd,
+		Net:    "tcp",
+		Addr:   conf.MysqlConfig.HostPort,
+		DBName: conf.MysqlConfig.DBName,
+		Params: map[string]string{
+			"charset": "utf8",
+		},
+	}
+
+	db, err := xorm.NewEngine("mysql", connectStr.FormatDSN())
+	if err != nil {
+		logrus.Panic("DB connection initialization failed, ", err)
+	}
+
+	orm = db
+
+	//testId, _ := uuid.NewV4()
+
+	_, err = orm.Insert(&model.User{
+		Id: "TestID",
+	})
+
+	if err != nil {
+		logrus.Errorln("Insert TestID to Mysql Failed， err：", err.Error())
+	}
+	return
+}

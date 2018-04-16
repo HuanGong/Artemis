@@ -1,7 +1,11 @@
 package statisticians
 
-import "github.com/labstack/echo"
-
+import (
+	"github.com/labstack/echo"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/labstack/echo/middleware"
+	"strings"
+)
 
 type (
 	Statistician struct {
@@ -31,6 +35,14 @@ func (impl *Statistician) HttpServerName() string {
 }
 
 func (impl *Statistician) OnServerInitialized(ec *echo.Echo) error {
+
+	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey: []byte("123"),
+		Claims:  jwt.MapClaims{},
+		Skipper: func(c echo.Context) bool {
+			return strings.HasPrefix(c.Path(), "/pri")
+		},
+	}))
 
 	ec.GET("/statistics/pv", impl.handler.PVStatistic)
 

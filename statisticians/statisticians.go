@@ -5,7 +5,12 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/middleware"
 	"strings"
+	"github.com/BurntSushi/toml"
+	"github.com/sirupsen/logrus"
+	"encoding/json"
 )
+
+var Conf Config = Config{}
 
 type (
 	Statistician struct {
@@ -14,9 +19,25 @@ type (
 )
 
 func NewStatistician() *Statistician {
+
+	loadConfig()
+
 	return &Statistician{
 		handler: &StatisticHandler{},
 	}
+}
+
+func loadConfig() {
+	if _, err := toml.DecodeFile("config.toml", &Conf); err != nil {
+		logrus.Panicln(err.Error())
+	}
+	jc, _ := json.Marshal(&Conf)
+	logrus.Infoln("load config.toml", string(jc))
+	level, err := logrus.ParseLevel(Conf.LogLevel)
+	if err != nil {
+		logrus.SetLevel(logrus.DebugLevel)
+	}
+	logrus.SetLevel(level)
 }
 
 func (impl *Statistician) BeforeCliRun() error {
@@ -28,7 +49,7 @@ func (impl *Statistician) OnCliApplicationRun() error {
 }
 
 func (impl *Statistician) Endpoint() string {
-	return "0.0.0.0:3005"
+	return Conf.ServerAddress
 }
 func (impl *Statistician) HttpServerName() string {
 	return "Statistician"
@@ -37,14 +58,18 @@ func (impl *Statistician) HttpServerName() string {
 func (impl *Statistician) OnServerInitialized(ec *echo.Echo) error {
 
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey: []byte("123"),
+		SigningKey: []byte(Conf.JWTSecretkey),
 		Claims:  jwt.MapClaims{},
 		Skipper: func(c echo.Context) bool {
 			return strings.HasPrefix(c.Path(), "/pri")
 		},
 	}))
 
-	ec.GET("/statistics/pv", impl.handler.PVStatistic)
+	privateGr := ec.Group("/pri")
+	privateGr.GET("pv", impl.handler.PVStatistic)
+
+
+	ec.GET("/c/pv", impl.handler.PVStatistic)
 
 	return nil
 }

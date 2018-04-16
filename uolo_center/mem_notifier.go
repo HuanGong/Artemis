@@ -1,11 +1,11 @@
-package mem_notifier
+package uolo_center
 
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/go-xorm/xorm"
 	"github.com/go-sql-driver/mysql"
-	"artemis/mem_notifier/model"
+	"artemis/uolo_center/model"
 	"github.com/sirupsen/logrus"
 	"github.com/BurntSushi/toml"
 	"github.com/dgrijalva/jwt-go"

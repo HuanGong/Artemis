@@ -1,4 +1,4 @@
-package mem_notifier
+package uolo_center
 
 type (
 	MysqlConfig struct {

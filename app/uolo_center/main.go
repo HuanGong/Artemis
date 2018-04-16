@@ -1,14 +1,14 @@
 package main
 
 import (
-	"artemis/mem_notifier"
+	"artemis/uolo_center"
 	"artemis/base/uolo"
 )
 
 
 func main() {
 
-	notifier := mem_notifier.NewNotifier()
+	notifier := uolo_center.NewNotifier()
 
 	app := uolo.NewApp(notifier)
 	app.WithHttpServer(notifier).

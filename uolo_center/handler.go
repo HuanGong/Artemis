@@ -1,10 +1,10 @@
-package mem_notifier
+package uolo_center
 
 import (
 	"time"
 	"net/http"
 	"github.com/labstack/echo"
-	"artemis/mem_notifier/model"
+	"artemis/uolo_center/model"
 	"github.com/sirupsen/logrus"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"

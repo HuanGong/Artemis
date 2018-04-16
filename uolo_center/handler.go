@@ -37,31 +37,39 @@ func AbortWithError(c echo.Context, code int, message string) error {
 func (handler *Handler) SignUp(ec echo.Context) error {
 	logrus.Infoln("SignUP enter")
 
+	type SignUpForm struct {
+		Name 	 string `form:"username" json:"username" binding:"required"`
+		Email    string `form:"email" json:email binding:"required"`
+		Password string `form:"password" json:"password" binding:"required"`
+	}
 
-	user := &model.User{}
-	if err := ec.Bind(user); err != nil {
+	form := &SignUpForm{}
+	if err := ec.Bind(form); err != nil {
 		logrus.Infof("Request Arguments Error When Bind")
 		return &echo.HTTPError{Code:http.StatusBadRequest, Message: "Invailed Request Arguments",}
 	}
 
-	logrus.Infoln("user:", user)
-	if user.Email == "" || user.Password == "" {
+	logrus.Infoln("SignUP data:", form)
+	if form.Email == "" || form.Password == "" || form.Name == "" {
 		return &echo.HTTPError{Code:http.StatusBadRequest, Message: "Email or Password Error",}
 	}
 
-	found, err := orm.Where("username = ?", user.Name).Get(user)
+	user := &model.User{}
+	found, err := orm.Where("username = ?", form.Name).Get(user)
 	if err != nil {
 		logrus.Errorln("db error:", err.Error())
 		return AbortWithError(ec, http.StatusInternalServerError, "数据查询失败")
 	}
 	if found {
-		return AbortWithError(ec, -1, "用户已存在")
+		logrus.Errorln("user exsist,", user)
+		return AbortWithError(ec, http.StatusBadRequest, "用户已存在")
 	}
 
 	uuidGen, _ := uuid.NewV4()
 	user.Id = uuidGen.String()
-
-	if digest, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost); err != nil {
+	user.Email = form.Email
+	user.Name  = form.Name
+	if digest, err := bcrypt.GenerateFromPassword([]byte(form.Password), bcrypt.DefaultCost); err != nil {
 		return AbortWithError(ec, -1, err.Error())
 	} else {
 		user.Password = string(digest)

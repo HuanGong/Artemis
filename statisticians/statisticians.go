@@ -61,15 +61,15 @@ func (impl *Statistician) OnServerInitialized(ec *echo.Echo) error {
 		SigningKey: []byte(Conf.JWTSecretkey),
 		Claims:  jwt.MapClaims{},
 		Skipper: func(c echo.Context) bool {
-			return strings.HasPrefix(c.Path(), "/pri")
+			return !strings.HasPrefix(c.Path(), "/pri")
 		},
 	}))
 
 	privateGr := ec.Group("/pri")
-	privateGr.GET("pv", impl.handler.PVStatistic)
+	privateGr.GET("/pv", impl.handler.PVStatistic)
 
-
-	ec.GET("/c/pv", impl.handler.PVStatistic)
+	publicGr := ec.Group("/com")
+	publicGr.GET("/pv", impl.handler.PVStatistic)
 
 	return nil
 }

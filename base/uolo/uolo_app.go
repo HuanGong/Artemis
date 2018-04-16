@@ -48,7 +48,6 @@ func NewApp(c AppContent) *App {
 	app := &App{
 		content: c,
 	}
-	log.SetLevel(log.DebugLevel)
 	return app
 }
 

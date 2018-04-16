@@ -1,7 +1,9 @@
+LogLevel = "DEBUG"
 ServerAddress = "127.0.0.1:3005"
+JWTSecretkey = "TestIv8^vow%Jf4gPfppyt*q"
 
 [MysqlConfig]
 User = "root"
 Passwd = "gonghuan"
-HostPort = "0.0.0.0:3306"
 DBName = "uolo_mem"
+HostPort = "0.0.0.0:3306"

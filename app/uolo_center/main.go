@@ -5,7 +5,6 @@ import (
 	"artemis/base/uolo"
 )
 
-
 func main() {
 
 	notifier := uolo_center.NewNotifier()

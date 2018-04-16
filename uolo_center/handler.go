@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	JWTSecretkey = "secret"
 	ExpireTime   = time.Hour * 2
 )
 
@@ -110,7 +109,7 @@ func (handler *Handler) Login(ec echo.Context) error {
 	claims["exp"] = expire.Unix()
 
 	// Sign and get the complete encoded token as a string
-	tokenString, err := token.SignedString([]byte(JWTSecretkey))
+	tokenString, err := token.SignedString([]byte(conf.JWTSecretkey))
 
 	if err != nil {
 		return AbortWithError(ec, http.StatusUnauthorized, "Create JWT Token faild")
@@ -139,7 +138,7 @@ func (handler *Handler) AuthRefresh(ec echo.Context) error {
 	claims["exp"] = expire.Unix()
 	claims["id"] = oldId
 
-	tokenString, err := token.SignedString([]byte(JWTSecretkey))
+	tokenString, err := token.SignedString([]byte(conf.JWTSecretkey))
 
 	if err != nil {
 		return AbortWithError(ec, http.StatusUnauthorized, "Create JWT Token faild")

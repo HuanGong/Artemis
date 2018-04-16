@@ -19,13 +19,13 @@ var (
 
 type (
 
-	Notifier struct {
+	UoloCenter struct {
 		handler *Handler
 	}
 )
 
-func NewNotifier() *Notifier {
-	instance :=  &Notifier {
+func NewNotifier() *UoloCenter {
+	instance :=  &UoloCenter{
 		handler: &Handler{},
 	}
 	loadConfig()
@@ -35,22 +35,22 @@ func NewNotifier() *Notifier {
 	return instance
 }
 
-func (notifier *Notifier) BeforeCliRun() error {
+func (notifier *UoloCenter) BeforeCliRun() error {
 	return nil
 }
 
-func (notifier *Notifier) OnCliApplicationRun() error {
+func (notifier *UoloCenter) OnCliApplicationRun() error {
 	return nil
 }
 
-func (notifier *Notifier) Endpoint() string {
+func (notifier *UoloCenter) Endpoint() string {
 	return conf.ServerAddress
 }
-func (notifier *Notifier) HttpServerName() string {
+func (notifier *UoloCenter) HttpServerName() string {
 	return "MemReminder"
 }
 
-func (notifier *Notifier) OnServerInitialized(ec *echo.Echo) error {
+func (notifier *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
 		SigningKey: []byte(JWTSecretkey),

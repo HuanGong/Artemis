@@ -50,7 +50,7 @@ func (impl *UoloCenter) Endpoint() string {
 	return conf.ServerAddress
 }
 func (impl *UoloCenter) HttpServerName() string {
-	return "MemReminder"
+	return "UoloCenter"
 }
 
 func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
@@ -58,6 +58,8 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
 		SigningKey: []byte(conf.JWTSecretkey),
 		Claims:  jwt.MapClaims{},
+		TokenLookup: "cookie:UoloAU",
+		AuthScheme: "Uolo",
 		Skipper: func(c echo.Context) bool {
 			_, ok := impl.passPath[c.Path()]
 			return ok

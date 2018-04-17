@@ -123,11 +123,15 @@ func (handler *Handler) Login(ec echo.Context) error {
 		return AbortWithError(ec, http.StatusUnauthorized, "Create JWT Token faild")
 	}
 
-	json := map[string]string {
-		"token": tokenString,
-		"expire": expire.Format(time.RFC3339),
+	uidCookie := &http.Cookie{
+		Name:		"UoloAU",
+		Value:    	tokenString,
+		HttpOnly: 	true,
+		MaxAge:   	int(time.Hour * 24),
 	}
-	return ec.JSON(http.StatusOK, json)
+
+	ec.SetCookie(uidCookie)
+	return ec.String(200, "")
 }
 
 func (handler *Handler) AuthRefresh(ec echo.Context) error {

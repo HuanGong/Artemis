@@ -58,12 +58,15 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
 		SigningKey: []byte(conf.JWTSecretkey),
 		Claims:  jwt.MapClaims{},
-		TokenLookup: "cookie:UoloAU",
-		AuthScheme: "Uolo",
 		Skipper: func(c echo.Context) bool {
 			_, ok := impl.passPath[c.Path()]
 			return ok
 		},
+	}))
+
+	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE},
 	}))
 
 	gr := ec.Group("/au") // Authorization relative
@@ -71,6 +74,7 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 	gr.POST("/login", impl.handler.Login)
 	gr.POST("/check", impl.handler.AuthTest)
 	gr.POST("/reauth", impl.handler.AuthRefresh)
+	gr.POST("/reset/passwd", impl.handler.ResetPassword)
 
 	return nil
 }

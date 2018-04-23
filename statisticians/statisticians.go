@@ -8,9 +8,11 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/sirupsen/logrus"
 	"encoding/json"
+	"github.com/go-redis/redis"
 )
 
 var Conf Config = Config{}
+var redisClient *redis.Client
 
 type (
 	Statistician struct {
@@ -21,6 +23,16 @@ type (
 func NewStatistician() *Statistician {
 
 	loadConfig()
+	redisOption := &redis.Options{
+		Addr: "127.0.0.1:6379",
+		DB:   1,
+		MaxRetries: 0,
+	}
+	redisClient = redis.NewClient(redisOption)
+	if _, err := redisClient.Ping().Result(); err != nil {
+		logrus.Panicln("Connection Redis Failed")
+		return nil
+	}
 
 	return &Statistician{
 		handler: &StatisticHandler{},

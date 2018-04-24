@@ -105,8 +105,8 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 func (handler *Handler) Login(ec echo.Context) error {
 	logrus.Debugln("Handler.Login Enter")
 	type LoginForm struct {
-		Name     string `form:"username" json:"username" binding:"required"`
-		Password string `form:"password" json:"password" binding:"required"`
+    Name     string `form:"username" json:"username" binding:"required" query:"username"`
+    Password string `form:"password" json:"password" binding:"required" query:"password"`
 	}
 
 	form := &LoginForm{}

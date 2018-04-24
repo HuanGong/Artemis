@@ -66,7 +66,7 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
-		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE},
+		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS},
 	}))
 
 	gr := ec.Group("/au") // Authorization relative
@@ -75,6 +75,12 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 	gr.POST("/check", impl.handler.AuthTest)
 	gr.POST("/reauth", impl.handler.AuthRefresh)
 	gr.POST("/reset/passwd", impl.handler.ResetPassword)
+
+	gr.GET("/signup", impl.handler.SignUp)
+	gr.GET("/login", impl.handler.Login)
+	gr.GET("/check", impl.handler.AuthTest)
+	gr.GET("/reauth", impl.handler.AuthRefresh)
+	gr.GET("/reset/passwd", impl.handler.ResetPassword)
 
 	return nil
 }

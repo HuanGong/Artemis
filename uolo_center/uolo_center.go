@@ -1,14 +1,17 @@
 package uolo_center
 
 import (
-	"github.com/labstack/echo"
-	"github.com/go-xorm/xorm"
-	"github.com/go-sql-driver/mysql"
-	"github.com/sirupsen/logrus"
-	"github.com/BurntSushi/toml"
-	"github.com/dgrijalva/jwt-go"
 	"encoding/json"
+	"github.com/BurntSushi/toml"
+	"github.com/go-sql-driver/mysql"
+	"github.com/go-xorm/xorm"
+	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/sirupsen/logrus"
+	"net/http"
+	"time"
+	"github.com/dgrijalva/jwt-go"
+	"strings"
 )
 
 var (
@@ -17,18 +20,17 @@ var (
 )
 
 type (
-
 	UoloCenter struct {
-		handler 	*Handler
-		passPath 	map[string]bool
+		handler      *Handler
+		utilsHandler *UtilsHandler
 	}
 )
 
 func NewNotifier() *UoloCenter {
 
-	instance :=  &UoloCenter{
-		handler: 	&Handler{},
-		passPath: 	map[string]bool {"/au/login":true, "/au/signup": true},
+	instance := &UoloCenter{
+		handler:      &Handler{},
+		utilsHandler: NewUtilsHandler(),
 	}
 
 	loadConfig()
@@ -55,19 +57,25 @@ func (impl *UoloCenter) HttpServerName() string {
 
 func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 
-	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey: []byte(conf.JWTSecretkey),
-		Claims:  jwt.MapClaims{},
-		Skipper: func(c echo.Context) bool {
-			_, ok := impl.passPath[c.Path()]
-			return ok
-		},
-	}))
 
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS},
 	}))
+
+	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey: []byte(conf.JWTSecretkey),
+		Claims:     jwt.MapClaims{},
+		Skipper: func(c echo.Context) bool {
+			logrus.Debugln("Request Path:", c.Path())
+			if strings.HasPrefix(c.Path(), "/utils") {
+				logrus.Debugln("skipper jwt verify")
+				return true
+			}
+			return true
+		},
+	}))
+
 
 	gr := ec.Group("/au") // Authorization relative
 	gr.POST("/signup", impl.handler.SignUp)
@@ -81,6 +89,21 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 	gr.GET("/check", impl.handler.AuthTest)
 	gr.GET("/reauth", impl.handler.AuthRefresh)
 	gr.GET("/reset/passwd", impl.handler.ResetPassword)
+
+	ec.GET("/cm", func(ec echo.Context) error {
+		uidCookie := &http.Cookie{
+			Name:     "UoloAU",
+			Value:    "HuanGong",
+			HttpOnly: false,
+			Domain:   "",
+			MaxAge:   int(time.Hour * 2),
+		}
+		ec.SetCookie(uidCookie)
+		return ec.String(200, "")
+	})
+
+	utilsGr := ec.Group("/utils")
+	utilsGr.GET("/qrcode", impl.utilsHandler.GenQrcode)
 
 	return nil
 }

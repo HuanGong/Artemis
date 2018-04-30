@@ -1,73 +1,69 @@
-package uolo_center
+package uolo_lens
 
 import (
-	"encoding/json"
-	"github.com/BurntSushi/toml"
+	"github.com/sirupsen/logrus"
 	"github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
+	"artemis/uolo_center/posts"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
-	"github.com/dgrijalva/jwt-go"
-	"strings"
-	"artemis/uolo_center/posts"
+	"github.com/BurntSushi/toml"
+	"encoding/json"
+	"github.com/pkg/errors"
 )
 
 var (
 	conf Config
 	orm  *xorm.Engine
+	WhiteList    map[string]bool
 )
 
 type (
-	UoloCenter struct {
-		handler      *Handler
-		utilsHandler *UtilsHandler
+
+	UoloLens struct {
 		postHandler  *posts.PostHandler
-		WhiteList    map[string]bool
 	}
 )
 
-func NewNotifier() *UoloCenter {
+func NewUoloLens() *UoloLens {
+	WhiteList =    make(map[string]bool)
 
-	instance := &UoloCenter{
-		handler:      &Handler{},
-		utilsHandler: NewUtilsHandler(),
+	instance := &UoloLens{
 		postHandler:  &posts.PostHandler{},
-		WhiteList:    make(map[string]bool),
 	}
 
 	loadConfig()
 
-	initDB()
+	initMysqlDB()
 
 	return instance
 }
 
-func (impl *UoloCenter) BeforeCliRun() error {
+func (impl *UoloLens) BeforeCliRun() error {
 	return nil
 }
 
-func (impl *UoloCenter) OnCliApplicationRun() error {
+func (impl *UoloLens) OnCliApplicationRun() error {
 	return nil
 }
 
-func (impl *UoloCenter) Endpoint() string {
+func (impl *UoloLens) Endpoint() string {
 	return conf.ServerAddress
 }
-func (impl *UoloCenter) HttpServerName() string {
-	return "UoloCenter"
+func (impl *UoloLens) HttpServerName() string {
+	return "UoloLens"
 }
 
-func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
+func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 
 
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS},
 	}))
-
+/*
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
 		SigningKey: []byte(conf.JWTSecretkey),
 		Claims:     jwt.MapClaims{},
@@ -86,21 +82,7 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 			return false
 		},
 	}))
-
-
-	gr := ec.Group("/au") // Authorization relative
-	gr.POST("/signup", impl.handler.SignUp)
-	gr.POST("/login", impl.handler.Login)
-	gr.POST("/check", impl.handler.AuthTest)
-	gr.POST("/reauth", impl.handler.AuthRefresh)
-	gr.POST("/reset/passwd", impl.handler.ResetPassword)
-
-	gr.GET("/signup", impl.handler.SignUp)
-	gr.GET("/login", impl.handler.Login)
-	gr.GET("/check", impl.handler.AuthTest)
-	gr.GET("/reauth", impl.handler.AuthRefresh)
-	gr.GET("/reset/passwd", impl.handler.ResetPassword)
-
+*/
 	ec.GET("/cm", func(ec echo.Context) error {
 		uidCookie := &http.Cookie{
 			Name:     "UoloAU",
@@ -112,10 +94,6 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 		ec.SetCookie(uidCookie)
 		return ec.String(200, "")
 	})
-
-	utilsGr := ec.Group("/utils")
-	utilsGr.GET("/qrcode", impl.utilsHandler.GenQrcode)
-	utilsGr.GET("/post", impl.postHandler.GetPost)
 
 	memGr := ec.Group("/mem")
 	memGr.POST("/post/new", impl.postHandler.PostNew)
@@ -136,7 +114,7 @@ func loadConfig() {
 	logrus.SetLevel(level)
 }
 
-func initDB() {
+func initMysqlDB() error {
 
 	connectStr := &mysql.Config{
 		User:   conf.MysqlConfig.User,
@@ -152,12 +130,16 @@ func initDB() {
 	db, err := xorm.NewEngine("mysql", connectStr.FormatDSN())
 	if err != nil {
 		logrus.Panic("DB connection initialization failed, ", err)
+		return errors.Wrapf(err, "DB connection initialization failed")
 	}
 
 	orm = db
 
 	if err := orm.Ping(); err != nil {
 		logrus.Errorln("Ping Mysql Failed, Please Check Your Connection Config")
+		return err
 	}
-	return
+
+	return nil
 }
+

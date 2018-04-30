@@ -26,7 +26,7 @@ scp ./$binFile    $machine:$servicePath/new
 scp ./restart.sh $machine:$servicePath
 #scp -r ./$dataFile $machine:$servicePath
 
-#ssh $machine "cd $servicePath; pwd ; /bin/bash restart.sh"
+ssh $machine "cd $servicePath; pwd ; /bin/bash restart.sh"
 
 if [ $? -ne 0 ]; then
   echo "run failed"

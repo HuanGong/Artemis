@@ -61,7 +61,7 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 	}
 
 	logrus.Infoln("SignUP data:", form)
-	if form.Email == "" || form.Password == "" || form.Name == "" {
+	if form.Password == "" || form.Name == "" || form.Email == "" {
 		return &echo.HTTPError{Code: http.StatusBadRequest, Message: "Email or Password Error"}
 	}
 

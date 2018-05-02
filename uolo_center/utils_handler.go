@@ -19,7 +19,7 @@ func NewUtilsHandler() *UtilsHandler {
 }
 
 func (handler *UtilsHandler) GenQrcode(ec echo.Context) error {
-	//rawImage, _ := qrcode.Encode("http://www.baidu.comadfads", qrcode.High, 256)
+	//rawImage, _ := qrcode2.Encode("http://www.baidu.comadfads", qrcode2.High, 256)
 	content := ec.QueryParam("text")
 	if len(content) == 0 {
 		content = "http://www.echoface.cn"

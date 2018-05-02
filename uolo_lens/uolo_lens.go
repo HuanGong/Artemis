@@ -4,11 +4,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
-	"artemis/uolo_center/posts"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"net/http"
-	"time"
 	"github.com/BurntSushi/toml"
 	"encoding/json"
 	"github.com/pkg/errors"
@@ -23,7 +20,7 @@ var (
 type (
 
 	UoloLens struct {
-		postHandler  *posts.PostHandler
+		postHandler  *PostHandler
 	}
 )
 
@@ -31,7 +28,7 @@ func NewUoloLens() *UoloLens {
 	WhiteList =    make(map[string]bool)
 
 	instance := &UoloLens{
-		postHandler:  &posts.PostHandler{},
+		postHandler: &PostHandler{},
 	}
 
 	loadConfig()
@@ -83,20 +80,10 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 		},
 	}))
 */
-	ec.GET("/cm", func(ec echo.Context) error {
-		uidCookie := &http.Cookie{
-			Name:     "UoloAU",
-			Value:    "HuanGong",
-			HttpOnly: false,
-			Domain:   "",
-			MaxAge:   int(time.Hour * 2),
-		}
-		ec.SetCookie(uidCookie)
-		return ec.String(200, "")
-	})
 
-	memGr := ec.Group("/mem")
-	memGr.POST("/post/new", impl.postHandler.PostNew)
+
+	memGr := ec.Group("/lens")
+	memGr.GET("/post/content", impl.postHandler.GetPostContent)
 
 	return nil
 }
@@ -142,4 +129,5 @@ func initMysqlDB() error {
 
 	return nil
 }
+
 

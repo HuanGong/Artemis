@@ -33,7 +33,7 @@ func (handler *PostHandler) GetPost(ec echo.Context) error {
 - hello nice
 - hello nice
 
-<img align="right" src="//api.echoface.cn/utils/qrcode?text=gonghuan"/>
+<img align="right" src="//api.echoface.cn/utils/qrcode2?text=gonghuan"/>
 
 这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈；这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈；这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈；这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈；这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈；这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈
 
@@ -55,7 +55,7 @@ this is content detail
 
 这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈；这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈；这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈；这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈；这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈；这是测试图片右边排列的文字， 可以吗这样， 如果可以的话， 那就太哈了哈哈哈哈哈哈哈
 
-![qrcode](//api.echoface.cn/utils/qrcode?text="gonghuan")
+![qrcode2](//api.echoface.cn/utils/qrcode2?text="gonghuan")
 
 this is content detail`
 	unsafe := blackfriday.Run([]byte(input))

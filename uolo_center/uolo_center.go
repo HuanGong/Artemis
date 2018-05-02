@@ -12,7 +12,6 @@ import (
 	"time"
 	"github.com/dgrijalva/jwt-go"
 	"strings"
-	"artemis/uolo_center/posts"
 )
 
 var (
@@ -24,7 +23,6 @@ type (
 	UoloCenter struct {
 		handler      *Handler
 		utilsHandler *UtilsHandler
-		postHandler  *posts.PostHandler
 		WhiteList    map[string]bool
 	}
 )
@@ -34,7 +32,6 @@ func NewNotifier() *UoloCenter {
 	instance := &UoloCenter{
 		handler:      &Handler{},
 		utilsHandler: NewUtilsHandler(),
-		postHandler:  &posts.PostHandler{},
 		WhiteList:    make(map[string]bool),
 	}
 
@@ -114,11 +111,7 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 	})
 
 	utilsGr := ec.Group("/utils")
-	utilsGr.GET("/qrcode", impl.utilsHandler.GenQrcode)
-	utilsGr.GET("/post", impl.postHandler.GetPost)
-
-	memGr := ec.Group("/mem")
-	memGr.POST("/post/new", impl.postHandler.PostNew)
+	utilsGr.GET("/qrcode2", impl.utilsHandler.GenQrcode)
 
 	return nil
 }

@@ -11,6 +11,7 @@ type (
 		ServerAddress string
 		JWTSecretkey 	string
 		LogLevel		string
-		MysqlConfig
+		MysqlConfig		MysqlConfig
+		PostDataDir     string
 	}
 )

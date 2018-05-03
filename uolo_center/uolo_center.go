@@ -91,6 +91,7 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 	gr.POST("/check", impl.handler.AuthTest)
 	gr.POST("/reauth", impl.handler.AuthRefresh)
 	gr.POST("/reset/passwd", impl.handler.ResetPassword)
+	//echoface.cn/au/reset/passwd?xxxx=xxxx&xxx=xxxx......
 
 	gr.GET("/signup", impl.handler.SignUp)
 	gr.GET("/login", impl.handler.Login)

@@ -83,7 +83,8 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 
 
 	memGr := ec.Group("/lens")
-	memGr.GET("/post/content", impl.postHandler.GetPostContent)
+	memGr.GET("/post/content", impl.postHandler.PostContentDetail)
+	memGr.GET("/contents", )
 
 	return nil
 }

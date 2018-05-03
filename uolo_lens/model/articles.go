@@ -15,17 +15,6 @@ type (
 		ResourcePath string `json:"resource_path" xorm:"resource_path"` // md, html 存储路径
 	}
 
-	MemCalendar struct {
-		Id       int64  `json:"id" xorm:"id"`           // unique id
-		Type     int32  `json:"type" xorm:"type"`       // 0: solar type, 1: lunar
-		FireTime int64  `json:"feature" xorm:"feature"` // trick time by day
-		Msg      string `json:"msg" xorm:"msg"`         //content
-	}
-
-	UserContent struct {
-		UserId   int64 `json:"user_id", xorm:user_id`
-
-	}
 )
 
 const (

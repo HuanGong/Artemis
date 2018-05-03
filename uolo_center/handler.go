@@ -243,6 +243,7 @@ func (handler *Handler) ResetPassword(ec echo.Context) error {
 
 	u := &model.User{}
 	found, err := orm.Where("username = ?", form.Name).Get(u)
+	//select user from xxxx where username=xxxx
 	if err != nil {
 		return AbortWithError(ec, ErrBadDatabaseQuery, "数据库错误")
 	}
@@ -255,7 +256,7 @@ func (handler *Handler) ResetPassword(ec echo.Context) error {
 		return AbortWithError(ec, ErrIncorrectPassword, "ID不匹配")
 	}
 
-	if form.New != form.Old {
+	if form.New != form.Confirm {
 		return AbortWithError(ec, ErrInvalidArguments, "密码不一致")
 	}
 

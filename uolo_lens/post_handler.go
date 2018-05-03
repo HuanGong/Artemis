@@ -17,7 +17,7 @@ func (handler *PostHandler) NewPost(ec echo.Context) error {
 	return ec.String(http.StatusOK, "")
 }
 
-func (handler *PostHandler) GetPostContent(ec echo.Context) error {
+func (handler *PostHandler) PostContentDetail(ec echo.Context) error {
 	type (
 		PostContentForm struct {
 			Path string `json:"path" query:"path" form:"path"`

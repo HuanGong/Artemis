@@ -3,15 +3,15 @@ package uolo_center
 import (
 	"encoding/json"
 	"github.com/BurntSushi/toml"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"time"
-	"github.com/dgrijalva/jwt-go"
 	"strings"
+	"time"
 )
 
 var (
@@ -59,7 +59,6 @@ func (impl *UoloCenter) HttpServerName() string {
 
 func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 
-
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS},
@@ -84,14 +83,12 @@ func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
 		},
 	}))
 
-
 	gr := ec.Group("/au") // Authorization relative
 	gr.POST("/signup", impl.handler.SignUp)
 	gr.POST("/login", impl.handler.Login)
 	gr.POST("/check", impl.handler.AuthTest)
 	gr.POST("/reauth", impl.handler.AuthRefresh)
 	gr.POST("/reset/passwd", impl.handler.ResetPassword)
-	//echoface.cn/au/reset/passwd?xxxx=xxxx&xxx=xxxx......
 
 	gr.GET("/signup", impl.handler.SignUp)
 	gr.GET("/login", impl.handler.Login)

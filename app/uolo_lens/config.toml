@@ -1,5 +1,5 @@
 LogLevel = "DEBUG"
-ServerAddress = "127.0.0.1:3005"
+ServerAddress = "127.0.0.1:3006"
 JWTSecretkey = "TestIv8^vow%Jf4gPfppyt*q"
 PostDataDir = "./data/"
 
@@ -7,7 +7,7 @@ PostDataDir = "./data/"
 [MysqlConfig]
 User = "fake"
 Passwd = "fake"
-DBName = "uolo"
+DBName = "lens"
 HostPort = "0.0.0.0:3300"
 
 

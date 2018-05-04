@@ -1,31 +1,30 @@
 package uolo_lens
 
 import (
-	"github.com/sirupsen/logrus"
+	"encoding/json"
+	"github.com/BurntSushi/toml"
 	"github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"github.com/BurntSushi/toml"
-	"encoding/json"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 var (
-	conf Config
-	orm  *xorm.Engine
-	WhiteList    map[string]bool
+	conf      Config
+	orm       *xorm.Engine
+	WhiteList map[string]bool
 )
 
 type (
-
 	UoloLens struct {
-		postHandler  *PostHandler
+		postHandler *PostHandler
 	}
 )
 
 func NewUoloLens() *UoloLens {
-	WhiteList =    make(map[string]bool)
+	WhiteList = make(map[string]bool)
 
 	instance := &UoloLens{
 		postHandler: &PostHandler{},
@@ -55,36 +54,34 @@ func (impl *UoloLens) HttpServerName() string {
 
 func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 
-
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS},
 	}))
-/*
-	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey: []byte(conf.JWTSecretkey),
-		Claims:     jwt.MapClaims{},
-		Skipper: func(c echo.Context) bool {
-			path := c.Path()
+	/*
+		ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
+			SigningKey: []byte(conf.JWTSecretkey),
+			Claims:     jwt.MapClaims{},
+			Skipper: func(c echo.Context) bool {
+				path := c.Path()
 
-			logrus.Debugln("Request Path:", c.Path())
+				logrus.Debugln("Request Path:", c.Path())
 
-			if strings.HasPrefix(path, "/utils") {
-				logrus.Debugln("skipper jwt verify")
-				return true
-			} else if strings.HasPrefix(path, "/au/login") ||
-				strings.HasPrefix(path, "/au/signup") {
-				return true
-			}
-			return false
-		},
-	}))
-*/
-
+				if strings.HasPrefix(path, "/utils") {
+					logrus.Debugln("skipper jwt verify")
+					return true
+				} else if strings.HasPrefix(path, "/au/login") ||
+					strings.HasPrefix(path, "/au/signup") {
+					return true
+				}
+				return false
+			},
+		}))
+	*/
 
 	memGr := ec.Group("/lens")
-	memGr.GET("/post/content", impl.postHandler.PostContentDetail)
-	memGr.GET("/contents", )
+	memGr.GET("/article/detail", impl.postHandler.PostContentDetail)
+	memGr.POST("/article/new", impl.postHandler.ArticleNew)
 
 	return nil
 }
@@ -130,5 +127,3 @@ func initMysqlDB() error {
 
 	return nil
 }
-
-

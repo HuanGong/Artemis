@@ -5,9 +5,9 @@ PostDataDir = "./data/"
 
 
 [MysqlConfig]
-User = "fake"
+User = "root"
 Passwd = "fake"
-DBName = "lens"
-HostPort = "0.0.0.0:3300"
+DBName = "uolo"
+HostPort = "127.0.0.1:3306"
 
 

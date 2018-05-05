@@ -3,7 +3,7 @@ ServerAddress = "127.0.0.1:3005"
 JWTSecretkey = "TestIv8^vow%Jf4gPfppyt*q"
 
 [MysqlConfig]
-User = "fake"
+User = "root"
 Passwd = "fake"
 DBName = "uolo"
-HostPort = "0.0.0.0:3300"
+HostPort = "127.0.0.1:3306"

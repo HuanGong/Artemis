@@ -140,3 +140,51 @@ func (handler *PostHandler) ArticleNew(ec echo.Context) error {
 
 	return ec.JSON(http.StatusOK, nil)
 }
+
+func (handler *PostHandler) DialysisConent(ec echo.Context) error {
+	type (
+		In struct {
+			Url string `json:"url" query:"url" form:"url"`
+		}
+		Response struct {
+			Code     int32  `json:"code" query:"code" form:"code"`
+			Message  string `json:"message" query:"message" form:"message"`
+			Author   string `json:"author" query:"author" form:"author"`
+			Title    string `json:"title" query:"title" form:"title"`
+			Mime     string `json:"mime" query:"mime" form:"mime"`
+			Desc     string `json:"desc" query:"desc" form:"desc"`
+			Origin   string `json:"origin" query:"origin" form:"origin"`
+			Date     string `json:"date" query:"date" form:"date"`
+			Keywords string `json:"keywords" query:"keywords" form:"keywords"`
+			Content  string `json:"content" query:"content" form:"content"`
+		}
+	)
+
+	res := Response{
+		Code: -1,
+	}
+
+	in := &In{}
+	if err := ec.Bind(in); err != nil {
+		res.Message = "参数错误"
+		return ec.JSON(http.StatusOK, res)
+	}
+
+	result, err := utils.ExtractArticleFromUrl(in.Url)
+	if err != nil {
+		res.Message = "解析错误"
+		return ec.JSON(http.StatusOK, res)
+	}
+
+	res.Code = 0
+	res.Message = "Ok"
+	res.Mime = "md"
+	res.Desc = result["desc"]
+	res.Date = result["date"]
+	res.Title = result["title"]
+	res.Origin = result["link"]
+	res.Author = result["author"]
+	res.Keywords = result["keywords"]
+	res.Content = result["content"]
+	return ec.JSON(http.StatusOK, res)
+}

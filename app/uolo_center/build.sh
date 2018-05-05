@@ -9,7 +9,7 @@ machine=$1
 configFile=$2
 
 #dataFile=$3
-servicePath=/data/deploy/uolo/api_center
+servicePath=/data/deploy/uolo/center
 binFile=uolo_center_linux
 
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $binFile main.go

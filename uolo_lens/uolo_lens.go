@@ -79,6 +79,9 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 		}))
 	*/
 
+	utilsGr := ec.Group("/utils")
+	utilsGr.GET("/extract/article", impl.postHandler.DialysisConent)
+
 	memGr := ec.Group("/lens")
 	memGr.GET("/article/detail", impl.postHandler.PostContentDetail)
 	memGr.POST("/article/new", impl.postHandler.ArticleNew)

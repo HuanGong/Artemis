@@ -1,7 +1,9 @@
 package uolo_lens
 
 import (
+	"encoding/base64"
 	"fmt"
+	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -78,4 +80,12 @@ func TestPostHandler_ArticleDetail2(t *testing.T) {
 		t.Error(err.Error())
 	}
 	fmt.Printf("Response:\n%s", string(body))
+}
+
+func TestPostHandler_UUIDNAME(t *testing.T) {
+	uuidName, _ := uuid.NewV4()
+	name := base64.RawURLEncoding.EncodeToString(uuidName[:])
+	fmt.Println(name)
+	fileName := fmt.Sprintf("%x", uuidName)
+	fmt.Println(fileName)
 }

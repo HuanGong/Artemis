@@ -3,15 +3,17 @@ package uolo_lens
 import (
 	"artemis/uolo_lens/model"
 	"artemis/uolo_lens/utils"
+	"encoding/base64"
 	"fmt"
 	"github.com/labstack/echo"
+	"github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/russross/blackfriday.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+	"time"
 )
 
 const (
@@ -23,10 +25,6 @@ type (
 	PostHandler struct {
 	}
 )
-
-func (handler *PostHandler) NewPost(ec echo.Context) error {
-	return ec.String(http.StatusOK, "")
-}
 
 func (handler *PostHandler) ArticleDetail(ec echo.Context) error {
 	type (
@@ -123,9 +121,11 @@ func (handler *PostHandler) ArticleNew(ec echo.Context) error {
 	}
 
 	//data dir
-	//dateFolder := time.Now().Format("20060102")
-	fileName := strings.Replace(form.Title, " ", "-", -1) + "." + form.Mime
-	fullPath := filepath.Join(conf.PostDataDir /* dateFolder,*/, fileName)
+	dateFolder := time.Now().Format("20060102")
+	uuidName, _ := uuid.NewV4()
+	fileName := base64.RawURLEncoding.EncodeToString(uuidName[:])
+	//fileName := strings.Replace(form.Title, " ", "-", -1) + "." + form.Mime
+	fullPath := filepath.Join(conf.PostDataDir, dateFolder, fileName)
 
 	article := &model.Article{
 		Tag:     form.Tag,

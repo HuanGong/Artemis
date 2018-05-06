@@ -83,10 +83,9 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	utilsGr.GET("/extract/article", impl.postHandler.DialysisConent)
 
 	memGr := ec.Group("/lens")
+	memGr.POST("/article/new", impl.postHandler.ArticleNew)
 	memGr.GET("/article/detail", impl.postHandler.ArticleDetail)
 	memGr.POST("/article/detail", impl.postHandler.ArticleDetail)
-
-	memGr.POST("/article/new", impl.postHandler.ArticleNew)
 
 	return nil
 }

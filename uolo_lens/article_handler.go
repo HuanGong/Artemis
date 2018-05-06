@@ -3,14 +3,20 @@ package uolo_lens
 import (
 	"artemis/uolo_lens/model"
 	"artemis/uolo_lens/utils"
+	"fmt"
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/russross/blackfriday.v2"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
-	"time"
+)
+
+const (
+	ArticlePublished      = 0
+	ArticleWaitForPublish = 1
 )
 
 type (
@@ -22,7 +28,7 @@ func (handler *PostHandler) NewPost(ec echo.Context) error {
 	return ec.String(http.StatusOK, "")
 }
 
-func (handler *PostHandler) PostContentDetail(ec echo.Context) error {
+func (handler *PostHandler) ArticleDetail(ec echo.Context) error {
 	type (
 		PostContentForm struct {
 			Path string `json:"path" query:"path" form:"path"`
@@ -39,38 +45,45 @@ func (handler *PostHandler) PostContentDetail(ec echo.Context) error {
 
 	if err := ec.Bind(form); err != nil {
 		return ec.JSON(http.StatusOK, Response{
-			Code:    1,
+			Code:    -1,
 			Message: "bad argument",
 		})
 	}
 
 	var fullUri string
-	if len(form.Path) == 0 {
-		fullUri = conf.PostDataDir + "wellcome.md"
+	if len(form.Path) == 0 { //404.html
+		fullUri = conf.PostDataDir + "404-not-found.md"
 	}
 	fullUri = conf.PostDataDir + form.Path
 	logrus.Debugln("full uri path:", fullUri)
+
 	//TODO: do a lru cache search
 	content, err := ioutil.ReadFile(fullUri)
-	if err != nil {
-		return ec.JSON(http.StatusOK, Response{
-			Code:    1,
-			Message: "No Such Post Data",
-		})
+	if os.IsNotExist(err) {
+		fullUri = conf.PostDataDir + "404-not-found.md"
+		content, err = ioutil.ReadFile(fullUri)
+		if err != nil {
+			return ec.JSON(http.StatusOK, Response{
+				Code:    -1,
+				Message: "What Happend!!!",
+			})
+		}
 	}
 
 	res := Response{
 		Code:    0,
 		Message: "success",
-		Content: "",
 	}
-	if form.Type == "md" {
+
+	switch form.Type {
+	case "md":
+		res.Content = string(content)
+	case "html":
 		unsafe := blackfriday.Run(content)
 		res.Content = string(unsafe)
-	} else {
-		res.Content = ""
-		res.Code = 2
-		res.Message = "Current Only Support Markdown Type"
+	default:
+		res.Code = -2
+		res.Message = fmt.Sprintf("Current Only Support Your Requested Type %s", form.Type)
 	}
 
 	return ec.JSON(http.StatusOK, res)
@@ -84,6 +97,7 @@ func (handler *PostHandler) ArticleNew(ec echo.Context) error {
 			Title   string `json:"title" query:"title" form:"title"`
 			Mime    string `json:"mime" query:"mime" form:"mime"`
 			Origin  string `json:"origin" query:"origin" form:"origin"`
+			Summary string `json:"summary" query:"summary" form:"summary"`
 			Content string `json:"content" query:"content" form:"content"`
 		}
 		Response struct {
@@ -109,19 +123,20 @@ func (handler *PostHandler) ArticleNew(ec echo.Context) error {
 	}
 
 	//data dir
-	dateFolder := time.Now().Format("20060102")
-	fileName := strings.Replace(form.Title, " ", "-", -1)
-	fullPath := filepath.Join(conf.PostDataDir, dateFolder, fileName, ".", form.Mime)
+	//dateFolder := time.Now().Format("20060102")
+	fileName := strings.Replace(form.Title, " ", "-", -1) + "." + form.Mime
+	fullPath := filepath.Join(conf.PostDataDir /* dateFolder,*/, fileName)
 
 	article := &model.Article{
-		Tag:          "tag",
-		Mime:         form.Mime,
-		Title:        form.Title,
-		Origin:       form.Origin,
-		Author:       form.Author,
-		Summary:      "NoSummary",
-		ResourcePath: fullPath,
-		Status:       1,
+		Tag:     form.Tag,
+		Mime:    form.Mime,
+		Title:   form.Title,
+		Origin:  form.Origin,
+		Author:  form.Author,
+		Summary: form.Summary,
+		Rpath:   fullPath,
+		Status:  ArticleWaitForPublish,
+		Count:   0,
 	}
 
 	switch form.Mime {
@@ -130,15 +145,25 @@ func (handler *PostHandler) ArticleNew(ec echo.Context) error {
 		//schedule task do storage content to file
 	default:
 		logrus.Errorln("current not supported")
-		ec.JSON(http.StatusOK, Response{
+		return ec.JSON(http.StatusOK, Response{
 			Code:    -3,
 			Message: "内容类型不支持",
 		})
 	}
 
-	orm.Insert(article)
+	_, err = orm.Insert(article)
+	if err != nil {
+		logrus.Errorln("Insert to database err:", err.Error())
+		return ec.JSON(http.StatusOK, Response{
+			Code:    -4,
+			Message: "插入数据库失败",
+		})
+	}
 
-	return ec.JSON(http.StatusOK, nil)
+	return ec.JSON(http.StatusOK, Response{
+		Code:    0,
+		Message: "OK",
+	})
 }
 
 func (handler *PostHandler) DialysisConent(ec echo.Context) error {

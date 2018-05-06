@@ -6,7 +6,7 @@ PostDataDir = "./data/"
 
 [MysqlConfig]
 User = "root"
-Passwd = "fake"
+Passwd = "gonghuan"
 DBName = "uolo"
 HostPort = "127.0.0.1:3306"
 

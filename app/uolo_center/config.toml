@@ -4,6 +4,6 @@ JWTSecretkey = "TestIv8^vow%Jf4gPfppyt*q"
 
 [MysqlConfig]
 User = "root"
-Passwd = "fake"
+Passwd = "gonghuan"
 DBName = "uolo"
 HostPort = "127.0.0.1:3306"

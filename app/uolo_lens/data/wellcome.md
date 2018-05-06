@@ -1,11 +1,19 @@
-# WellCome To Uolo Lens World
+# UOLO, You Only Live Once
 
+- do the things you wanna do
+    + 做爱做的事情
 
-生活不应该越填充越空虚, Uolo Lens 希望能给您带来一种宁静和坚定的生活记忆
+- to be the man who you wanna be
+    + 做想做的人
 
-- calendar lens: 提醒你该行动的， 不需要多，但应该很重要的；
+### Seven times have I despised my soul:
 
-- Infomation lens: 平静的阅读时光，而不是匆匆一瞥；希望你能放下使你充实的疲惫，让你或冥想，或慵懒，或激动，或黯然，而这些却是你需要的舒适
+From: Kahlil Gibran
 
-
-告诉自己， Uolo
+- The first time when I saw her being meek that she might attain height.
+- The second time when I saw her limping before the crippled.
+- The third time when she was given to choose between the hard and the easy, and she chose the easy.
+- The fourth time when she committed a wrong, and comforted herself that others also commit wrong.
+- The fifth time when she forbore for weakness, and attributed her patience to strength.
+- The sixth time when she despised the ugliness of a face, and knew not that it was one of her own masks.
+- And the seventh time when she sang a song of praise, and deemed it a virtue

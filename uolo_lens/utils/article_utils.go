@@ -2,20 +2,28 @@ package utils
 
 import (
 	"bytes"
-	"github.com/coreos/etcd/pkg/ioutil"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
-func SaveArticleAsFileSync(fullPath, content string) {
-	err := ioutil.WriteAndSyncFile(fullPath, []byte(content), 0644)
-	if err != nil {
-		logrus.Errorf("Save Content To file %s Failed, Content:%s", fullPath, content)
-		//TODO: note down failed  content info to file for avoiding data loss
+func SaveArticleAsFileSync(fullPath, content string) error {
+	folder, _ := filepath.Split(fullPath)
+
+	if _, err := os.Stat(folder); os.IsNotExist(err) {
+		if fail := os.MkdirAll(folder, 0755); fail != nil {
+			return fail
+		}
 	}
+	//
+	//if _, err := os.Stat("/path/to/whatever"); err == nil {
+	//	// path/to/whatever exists
+	//}
+	return ioutil.WriteFile(fullPath, []byte(content), 0644)
 }
 
 func ExtractArticleFromUrl(url string) (map[string]string, error) {

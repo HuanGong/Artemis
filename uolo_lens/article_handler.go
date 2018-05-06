@@ -53,7 +53,6 @@ func (handler *PostHandler) ArticleDetail(ec echo.Context) error {
 		fullUri = conf.PostDataDir + "404-not-found.md"
 	}
 	fullUri = conf.PostDataDir + form.Path
-	logrus.Debugln("full uri path:", fullUri)
 
 	//TODO: do a lru cache search
 	content, err := ioutil.ReadFile(fullUri)
@@ -121,22 +120,27 @@ func (handler *PostHandler) ArticleNew(ec echo.Context) error {
 	}
 
 	//data dir
-	dateFolder := time.Now().Format("20060102")
+	timeNow := time.Now()
+	dateFolder := timeNow.Format("20060102")
 	uuidName, _ := uuid.NewV4()
-	fileName := base64.RawURLEncoding.EncodeToString(uuidName[:])
+	fileUID := base64.RawURLEncoding.EncodeToString(uuidName[:])
+	fileName := fileUID + "." + form.Mime
 	//fileName := strings.Replace(form.Title, " ", "-", -1) + "." + form.Mime
 	fullPath := filepath.Join(conf.PostDataDir, dateFolder, fileName)
 
 	article := &model.Article{
-		Tag:     form.Tag,
-		Mime:    form.Mime,
-		Title:   form.Title,
-		Origin:  form.Origin,
-		Author:  form.Author,
-		Summary: form.Summary,
-		Rpath:   fullPath,
-		Status:  ArticleWaitForPublish,
-		Count:   0,
+		Tag:       form.Tag,
+		Uuid:      fileUID,
+		Mime:      form.Mime,
+		Title:     form.Title,
+		Origin:    form.Origin,
+		Author:    form.Author,
+		Summary:   form.Summary,
+		Rpath:     fullPath,
+		CreatedAt: timeNow,
+		//UpdatedAt: timeNow,
+		Status: ArticleWaitForPublish,
+		Count:  0,
 	}
 
 	switch form.Mime {
@@ -212,4 +216,17 @@ func (handler *PostHandler) DialysisConent(ec echo.Context) error {
 	res.Keywords = result["keywords"]
 	res.Content = result["content"]
 	return ec.JSON(http.StatusOK, res)
+}
+
+func (handler *PostHandler) ArticleMod(ec echo.Context) error {
+	type (
+		Response struct {
+			Code    int32
+			Message string
+		}
+	)
+	return ec.JSON(http.StatusOK, Response{
+		Code:    -1,
+		Message: "权限未开放",
+	})
 }

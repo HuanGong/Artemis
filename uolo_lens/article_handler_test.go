@@ -12,21 +12,35 @@ import (
 
 func TestPostHandler_ArticleNew(t *testing.T) {
 	apiUrl := "http://localhost:3006/lens/article/new"
+	//apiUrl := "https://api.echoface.cn/lens/lens/article/new"
+
 	form := url.Values{}
 
-	form["title"] = []string{"Hello Kitty Nice To meet you"}
+	form["title"] = []string{"Welcome Uolo World"}
 	form["tag"] = []string{"C++"}
-	form["author"] = []string{"gonghuan"}
+	form["author"] = []string{"Huan.Gong"}
 	form["mime"] = []string{"md"}
 	form["origin"] = []string{"http://www.baidu.com/news/abc"}
-	form["summary"] = []string{"I Have a dream, but life only once in my all life time, so tell myself that 'you only live once'"}
-	form["content"] = []string{`# Remember, You Only Live Once
-		- do the things you wanna do
-		- to be the man who you wanna be
+	form["summary"] = []string{"UOLO, You Only Live Once and Seven times have I despised my soul"}
+	form["content"] = []string{`# UOLO, You Only Live Once
 
-		love the people who charming you
-		second content here
-	`}
+- do the things you wanna do
+    + 做爱做的事情
+
+- to be the man who you wanna be
+    + 做想做的人
+
+### Seven times have I despised my soul:
+
+From: Kahlil Gibran
+
+- The first time when I saw her being meek that she might attain height.
+- The second time when I saw her limping before the crippled.
+- The third time when she was given to choose between the hard and the easy, and she chose the easy.
+- The fourth time when she committed a wrong, and comforted herself that others also commit wrong.
+- The fifth time when she forbore for weakness, and attributed her patience to strength.
+- The sixth time when she despised the ugliness of a face, and knew not that it was one of her own masks.
+- And the seventh time when she sang a song of praise, and deemed it a virtue`}
 	res, err := http.PostForm(apiUrl, form)
 	if err != nil {
 		fmt.Println("Http Post Failed with err:", err.Error(), " Check Server Log For Detail")
@@ -55,7 +69,7 @@ func TestPostHandler_DialysisConent(t *testing.T) {
 }
 
 func TestPostHandler_ArticleDetail(t *testing.T) {
-	baseUrl := "http://localhost:3006/lens/article/detail?path=Hello-Kitty-Nice-To-meet-you.md&type=md"
+	baseUrl := "http://localhost:3006/lens/article/detail?path=20180506/J7u7SNeqQ5GPmZLiUOtfMA.md&type=md"
 	res, err := http.Get(baseUrl)
 	if err != nil {
 		t.Error(err.Error())
@@ -65,7 +79,7 @@ func TestPostHandler_ArticleDetail(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	fmt.Printf("Response:\n%s", string(body))
+	fmt.Println("Response:", string(body))
 }
 
 func TestPostHandler_ArticleDetail2(t *testing.T) {

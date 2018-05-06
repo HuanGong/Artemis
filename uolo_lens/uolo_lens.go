@@ -3,12 +3,14 @@ package uolo_lens
 import (
 	"encoding/json"
 	"github.com/BurntSushi/toml"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 var (
@@ -58,32 +60,32 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS},
 	}))
-	/*
-		ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-			SigningKey: []byte(conf.JWTSecretkey),
-			Claims:     jwt.MapClaims{},
-			Skipper: func(c echo.Context) bool {
-				path := c.Path()
 
-				logrus.Debugln("Request Path:", c.Path())
+	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
+		SigningKey: []byte(conf.JWTSecretkey),
+		Claims:     jwt.MapClaims{},
+		Skipper: func(c echo.Context) bool {
+			path := c.Path()
 
-				if strings.HasPrefix(path, "/utils") {
-					logrus.Debugln("skipper jwt verify")
-					return true
-				} else if strings.HasPrefix(path, "/au/login") ||
-					strings.HasPrefix(path, "/au/signup") {
-					return true
-				}
-				return false
-			},
-		}))
-	*/
+			logrus.Debugln("Request Path:", c.Path())
+			return true
+			if strings.HasPrefix(path, "/utils") {
+				logrus.Debugln("skipper jwt verify")
+				return true
+			} else if strings.HasPrefix(path, "/au/login") ||
+				strings.HasPrefix(path, "/au/signup") {
+				return true
+			}
+			return false
+		},
+	}))
 
 	utilsGr := ec.Group("/utils")
 	utilsGr.GET("/extract/article", impl.postHandler.DialysisConent)
 
 	memGr := ec.Group("/lens")
 	memGr.POST("/article/new", impl.postHandler.ArticleNew)
+	memGr.POST("/article/mod", impl.postHandler.ArticleMod)
 	memGr.GET("/article/detail", impl.postHandler.ArticleDetail)
 	memGr.POST("/article/detail", impl.postHandler.ArticleDetail)
 

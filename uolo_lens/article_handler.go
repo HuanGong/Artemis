@@ -50,14 +50,14 @@ func (handler *PostHandler) ArticleDetail(ec echo.Context) error {
 
 	var fullUri string
 	if len(form.Path) == 0 { //404.html
-		fullUri = conf.PostDataDir + "404-not-found.md"
+		fullUri = LensConfig.PostDataDir + "404-not-found.md"
 	}
-	fullUri = conf.PostDataDir + form.Path
+	fullUri = LensConfig.PostDataDir + form.Path
 
 	//TODO: do a lru cache search
 	content, err := ioutil.ReadFile(fullUri)
 	if os.IsNotExist(err) {
-		fullUri = conf.PostDataDir + "404-not-found.md"
+		fullUri = LensConfig.PostDataDir + "404-not-found.md"
 		content, err = ioutil.ReadFile(fullUri)
 		if err != nil {
 			return ec.JSON(http.StatusOK, Response{
@@ -123,14 +123,14 @@ func (handler *PostHandler) ArticleNew(ec echo.Context) error {
 	timeNow := time.Now()
 	dateFolder := timeNow.Format("20060102")
 	uuidName, _ := uuid.NewV4()
-	fileUID := base64.RawURLEncoding.EncodeToString(uuidName[:])
-	fileName := fileUID + "." + form.Mime
+	articleUID := base64.RawURLEncoding.EncodeToString(uuidName[:])
+	fileName := articleUID + "." + form.Mime
 	//fileName := strings.Replace(form.Title, " ", "-", -1) + "." + form.Mime
-	fullPath := filepath.Join(conf.PostDataDir, dateFolder, fileName)
+	fullPath := filepath.Join(LensConfig.PostDataDir, dateFolder, fileName)
 
 	article := &model.Article{
 		Tag:       form.Tag,
-		Uuid:      fileUID,
+		Uuid:      articleUID,
 		Mime:      form.Mime,
 		Title:     form.Title,
 		Origin:    form.Origin,
@@ -155,7 +155,7 @@ func (handler *PostHandler) ArticleNew(ec echo.Context) error {
 		})
 	}
 
-	_, err = orm.Insert(article)
+	_, err = Orm.Insert(article)
 	if err != nil {
 		logrus.Errorln("Insert to database err:", err.Error())
 		return ec.JSON(http.StatusOK, Response{
@@ -201,6 +201,7 @@ func (handler *PostHandler) DialysisConent(ec echo.Context) error {
 
 	result, err := utils.ExtractArticleFromUrl(in.Url)
 	if err != nil {
+		logrus.Errorln("Extract Error:", err.Error())
 		res.Message = "解析错误"
 		return ec.JSON(http.StatusOK, res)
 	}
@@ -229,4 +230,8 @@ func (handler *PostHandler) ArticleMod(ec echo.Context) error {
 		Code:    -1,
 		Message: "权限未开放",
 	})
+}
+
+func (handler *PostHandler) PublishFromUrl(ec echo.Context) error {
+	return ec.JSON(http.StatusOK, nil)
 }

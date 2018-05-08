@@ -2,13 +2,13 @@ syntax = "proto3";
 
 package model;
 
-message PostContent {
+message RecommendArticles {
     message FeaturedPost {
-        int32 post_id = 1;
+        int32 article_id = 1;
     }
-    repeated int32 featured_post = 1;
+    repeated int32 recomend_articles = 1;
 }
 
 message Recommendations {
-    PostContent posts = 1;
+    RecommendArticles articles = 1;
 }

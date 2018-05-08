@@ -7,11 +7,18 @@ type (
 		HostPort string
 		DBName   string
 	}
+	RedisConfig struct {
+		Name     string
+		Addr     string
+		DbIndex  int32
+		Password string
+	}
 	Config struct {
 		ServerAddress string
-		JWTSecretkey 	string
-		LogLevel		string
-		MysqlConfig		MysqlConfig
-		PostDataDir     string
+		JWTSecretkey  string
+		LogLevel      string
+		MysqlConfig   MysqlConfig
+		PostDataDir   string
+		RedisConfig   []RedisConfig
 	}
 )

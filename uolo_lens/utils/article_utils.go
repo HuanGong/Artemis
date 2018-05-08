@@ -19,10 +19,6 @@ func SaveArticleAsFileSync(fullPath, content string) error {
 			return fail
 		}
 	}
-	//
-	//if _, err := os.Stat("/path/to/whatever"); err == nil {
-	//	// path/to/whatever exists
-	//}
 	return ioutil.WriteFile(fullPath, []byte(content), 0644)
 }
 
@@ -48,7 +44,6 @@ func ExtractArticleFromUrl(url string) (map[string]string, error) {
 			break
 		}
 
-		//if strings.HasPrefix(line, "---") {
 		if line == "---\n" {
 			metaStart = !metaStart
 			if metaStart == false {

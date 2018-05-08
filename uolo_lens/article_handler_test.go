@@ -56,7 +56,8 @@ From: Kahlil Gibran
 
 func TestPostHandler_DialysisConent(t *testing.T) {
 	baseUrl := "http://localhost:3006/utils/extract/article?url="
-	contentUrl := "https://www.huxiu.com/article/242750.html"
+	//contentUrl := "https://www.huxiu.com/article/242750.html"
+	contentUrl := "http://start.iresearch.cn/content/2018/03/273475.shtml"
 	res, err := http.Get(baseUrl + contentUrl)
 	if err != nil {
 		t.Error(err.Error())

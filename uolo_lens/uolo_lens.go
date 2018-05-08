@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/BurntSushi/toml"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-redis/redis"
 	"github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/labstack/echo"
@@ -14,9 +15,10 @@ import (
 )
 
 var (
-	conf      Config
-	orm       *xorm.Engine
-	WhiteList map[string]bool
+	LensConfig     Config
+	Orm            *xorm.Engine
+	WhiteList      map[string]bool          = make(map[string]bool)
+	RedisClientMap map[string]*redis.Client = make(map[string]*redis.Client)
 )
 
 type (
@@ -26,7 +28,6 @@ type (
 )
 
 func NewUoloLens() *UoloLens {
-	WhiteList = make(map[string]bool)
 
 	instance := &UoloLens{
 		postHandler: &PostHandler{},
@@ -35,6 +36,8 @@ func NewUoloLens() *UoloLens {
 	loadConfig()
 
 	initMysqlDB()
+
+	initRedis(LensConfig.RedisConfig)
 
 	return instance
 }
@@ -48,7 +51,7 @@ func (impl *UoloLens) OnCliApplicationRun() error {
 }
 
 func (impl *UoloLens) Endpoint() string {
-	return conf.ServerAddress
+	return LensConfig.ServerAddress
 }
 func (impl *UoloLens) HttpServerName() string {
 	return "UoloLens"
@@ -62,7 +65,7 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	}))
 
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey: []byte(conf.JWTSecretkey),
+		SigningKey: []byte(LensConfig.JWTSecretkey),
 		Claims:     jwt.MapClaims{},
 		Skipper: func(c echo.Context) bool {
 			path := c.Path()
@@ -93,12 +96,12 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 }
 
 func loadConfig() {
-	if _, err := toml.DecodeFile("config.toml", &conf); err != nil {
+	if _, err := toml.DecodeFile("config.toml", &LensConfig); err != nil {
 		logrus.Panicln(err.Error())
 	}
-	jc, _ := json.Marshal(&conf)
+	jc, _ := json.Marshal(&LensConfig)
 	logrus.Infoln("load config.toml", string(jc))
-	level, err := logrus.ParseLevel(conf.LogLevel)
+	level, err := logrus.ParseLevel(LensConfig.LogLevel)
 	if err != nil {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
@@ -108,11 +111,11 @@ func loadConfig() {
 func initMysqlDB() error {
 
 	connectStr := &mysql.Config{
-		User:   conf.MysqlConfig.User,
-		Passwd: conf.MysqlConfig.Passwd,
+		User:   LensConfig.MysqlConfig.User,
+		Passwd: LensConfig.MysqlConfig.Passwd,
 		Net:    "tcp",
-		Addr:   conf.MysqlConfig.HostPort,
-		DBName: conf.MysqlConfig.DBName,
+		Addr:   LensConfig.MysqlConfig.HostPort,
+		DBName: LensConfig.MysqlConfig.DBName,
 		Params: map[string]string{
 			"charset": "utf8",
 		},
@@ -124,12 +127,33 @@ func initMysqlDB() error {
 		return errors.Wrapf(err, "DB connection initialization failed")
 	}
 
-	orm = db
+	Orm = db
 
-	if err := orm.Ping(); err != nil {
+	if err := Orm.Ping(); err != nil {
 		logrus.Errorln("Ping Mysql Failed, Please Check Your Connection Config")
 		return err
 	}
 
 	return nil
+}
+
+func initRedis(redisConf []RedisConfig) {
+	for _, conf := range redisConf {
+		rClient := redis.NewClient(&redis.Options{
+			Addr:     conf.Addr,
+			DB:       int(conf.DbIndex),
+			Password: conf.Password,
+		})
+
+		_, err := rClient.Ping().Result()
+		if err != nil {
+			logrus.Errorln("Connect To Redis Failed, server:", conf)
+			continue
+		}
+		if len(conf.Name) == 0 {
+			logrus.Errorln("Redis Config Must Need A Name")
+			continue
+		}
+		RedisClientMap[conf.Name] = rClient
+	}
 }

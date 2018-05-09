@@ -72,6 +72,7 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 
 			logrus.Debugln("Request Path:", c.Path())
 			return true
+
 			if strings.HasPrefix(path, "/utils") {
 				logrus.Debugln("skipper jwt verify")
 				return true
@@ -86,11 +87,11 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	utilsGr := ec.Group("/utils")
 	utilsGr.GET("/extract/article", impl.postHandler.DialysisConent)
 
-	memGr := ec.Group("/lens")
-	memGr.POST("/article/new", impl.postHandler.ArticleNew)
-	memGr.POST("/article/mod", impl.postHandler.ArticleMod)
-	memGr.GET("/article/detail", impl.postHandler.ArticleDetail)
-	memGr.POST("/article/detail", impl.postHandler.ArticleDetail)
+	memGr := ec.Group("/article")
+	memGr.POST("/new", impl.postHandler.ArticleNew)
+	memGr.POST("/mod", impl.postHandler.ArticleMod)
+	memGr.GET("/detail", impl.postHandler.ArticleDetail)
+	memGr.POST("/detail", impl.postHandler.ArticleDetail)
 
 	return nil
 }

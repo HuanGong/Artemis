@@ -28,3 +28,9 @@ CREATE TABLE `user_info` (
   PRIMARY KEY (`id`),
   KEY `idx_username_password` (`username`,`password`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `uolo_admin` (
+  `user_id`   varchar(64) character set utf8 collate utf8_bin NOT NULL,
+  `level`     tinyint(2)  DEFAULT NULL,
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

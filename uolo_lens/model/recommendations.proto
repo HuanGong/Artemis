@@ -3,10 +3,10 @@ syntax = "proto3";
 package model;
 
 message RecommendArticles {
-    message FeaturedPost {
-        int32 article_id = 1;
+    message Details {
+        int32 id = 1;
     }
-    repeated int32 recomend_articles = 1;
+    repeated Details details = 1;
 }
 
 message Recommendations {

@@ -84,7 +84,9 @@ func TestPostHandler_ArticleDetail(t *testing.T) {
 }
 
 func TestPostHandler_ArticleDetail2(t *testing.T) {
-	baseUrl := "http://localhost:3006/lens/article/detail?path=notfind.md&type=md"
+	//baseUrl := "http://localhost:3006/lens/article/detail?path=notfind.md&type=md"
+	baseUrl := "http://api.echoface.cn/lens/lens/article/detail?path=notfind.md&type=md"
+
 	res, err := http.Get(baseUrl)
 	if err != nil {
 		t.Error(err.Error())

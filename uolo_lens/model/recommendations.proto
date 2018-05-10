@@ -4,7 +4,7 @@ package model;
 
 message RecommendArticles {
     message Details {
-        int32 id = 1;
+        string id = 1;
     }
     repeated Details details = 1;
 }

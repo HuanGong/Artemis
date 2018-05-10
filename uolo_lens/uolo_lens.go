@@ -24,6 +24,7 @@ var (
 type (
 	UoloLens struct {
 		postHandler *PostHandler
+		lensHandler *LensHandler
 	}
 )
 
@@ -31,6 +32,7 @@ func NewUoloLens() *UoloLens {
 
 	instance := &UoloLens{
 		postHandler: &PostHandler{},
+		lensHandler: &LensHandler{},
 	}
 
 	loadConfig()
@@ -83,6 +85,8 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 			return false
 		},
 	}))
+
+	ec.GET("/lenslist", impl.lensHandler.LensList)
 
 	utilsGr := ec.Group("/utils")
 	utilsGr.GET("/extract/article", impl.postHandler.DialysisConent)

@@ -2,8 +2,10 @@ package uolo_lens
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -70,7 +72,7 @@ func TestPostHandler_DialysisConent(t *testing.T) {
 }
 
 func TestPostHandler_ArticleDetail(t *testing.T) {
-	baseUrl := "http://localhost:3006/lens/article/detail?path=20180506/J7u7SNeqQ5GPmZLiUOtfMA.md&type=md"
+	baseUrl := "http://localhost:3006/article/detail?path=20180506/J7u7SNeqQ5GPmZLiUOtfMA.md&type=md"
 	res, err := http.Get(baseUrl)
 	if err != nil {
 		t.Error(err.Error())
@@ -84,8 +86,8 @@ func TestPostHandler_ArticleDetail(t *testing.T) {
 }
 
 func TestPostHandler_ArticleDetail2(t *testing.T) {
-	//baseUrl := "http://localhost:3006/lens/article/detail?path=notfind.md&type=md"
-	baseUrl := "http://api.echoface.cn/lens/lens/article/detail?path=notfind.md&type=md"
+	baseUrl := "http://localhost:3006/article/detail?path=notfind.md&type=md"
+	//baseUrl := "http://api.echoface.cn/lens/lens/article/detail?path=notfind.md&type=md"
 
 	res, err := http.Get(baseUrl)
 	if err != nil {
@@ -105,4 +107,19 @@ func TestPostHandler_UUIDNAME(t *testing.T) {
 	fmt.Println(name)
 	fileName := fmt.Sprintf("%x", uuidName)
 	fmt.Println(fileName)
+}
+
+func TestPostHandler_ArticlePartJson(t *testing.T) {
+	type Response struct {
+		Abc     string `json:"abc"`
+		Code    int32  `json:"code"`
+		Message string
+	}
+	r := &Response{
+		Abc:     "Hello",
+		Code:    1,
+		Message: "HuanGong",
+	}
+	s, _ := json.Marshal(r)
+	logrus.Infoln("jsonstring:", string(s))
 }

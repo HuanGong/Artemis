@@ -94,8 +94,8 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	memGr := ec.Group("/article")
 	memGr.POST("/new", impl.postHandler.ArticleNew)
 	memGr.POST("/mod", impl.postHandler.ArticleMod)
-	memGr.GET("/detail", impl.postHandler.ArticleDetail)
 	memGr.POST("/detail", impl.postHandler.ArticleDetail)
+	memGr.GET("/detail", impl.postHandler.ArticleDetail)
 
 	return nil
 }

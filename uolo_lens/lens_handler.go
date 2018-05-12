@@ -43,14 +43,11 @@ func (handler *LensHandler) LensList(ec echo.Context) error {
 		logrus.Errorln("Recommendation Redis DB Broken")
 		return failedResponse(-1, "Query KV Error")
 	}
-	userId := "TestUserId"
-	if "" == ec.QueryParam("test") {
-		jwtToken := ec.Get("user")
-		if jwtToken == nil {
-			logrus.Errorln("jwt token error for nil jwt.Token")
-			return failedResponse(-2, "Jwt Token Error")
-		}
+	userId := "PublickUserID"
 
+	jwtToken := ec.Get("user")
+	if jwtToken != nil {
+		logrus.Debugln("User Not Login, Use Public Content")
 		oldClaims := jwtToken.(*jwt.Token).Claims.(jwt.MapClaims)
 		userId = (oldClaims["id"]).(string)
 		if len(userId) == 0 {
@@ -71,7 +68,6 @@ func (handler *LensHandler) LensList(ec echo.Context) error {
 			logrus.Errorln("Decode Recommendations from string failed, userid:", userId)
 		}
 	}
-	logrus.Debugln("Query From DB")
 
 	var articles []*model.Article = make([]*model.Article, 0)
 	err = Orm.OrderBy("RAND()").Limit(5).Find(&articles)

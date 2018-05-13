@@ -91,11 +91,12 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	utilsGr := ec.Group("/utils")
 	utilsGr.GET("/extract/article", impl.postHandler.DialysisConent)
 
-	memGr := ec.Group("/article")
-	memGr.POST("/new", impl.postHandler.ArticleNew)
-	memGr.POST("/mod", impl.postHandler.ArticleMod)
-	memGr.POST("/detail", impl.postHandler.ArticleDetail)
-	memGr.GET("/detail", impl.postHandler.ArticleDetail)
+	ArticleGr := ec.Group("/article")
+	ArticleGr.POST("/new", impl.postHandler.ArticleNew)
+	ArticleGr.POST("/mod", impl.postHandler.ArticleMod)
+	ArticleGr.POST("/detail", impl.postHandler.ArticleDetail)
+	ArticleGr.GET("/detail", impl.postHandler.ArticleDetail)
+	ArticleGr.GET("/auto/publish", impl.postHandler.AutoPublish)
 
 	return nil
 }

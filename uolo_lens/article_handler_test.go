@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/JesusIslam/tldr"
 	"github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -13,8 +14,8 @@ import (
 )
 
 func TestPostHandler_ArticleNew(t *testing.T) {
-	apiUrl := "http://localhost:3006/lens/article/new"
-	//apiUrl := "https://api.echoface.cn/lens/lens/article/new"
+	//apiUrl := "http://localhost:3006/lens/article/new"
+	apiUrl := "https://api.echoface.cn/lens/article/new"
 
 	form := url.Values{}
 
@@ -111,7 +112,7 @@ func TestPostHandler_UUIDNAME(t *testing.T) {
 
 func TestPostHandler_ArticlePartJson(t *testing.T) {
 	type Response struct {
-		Abc     string `json:"abc"`
+		Abc     string `json:"-"`
 		Code    int32  `json:"code"`
 		Message string
 	}
@@ -122,4 +123,24 @@ func TestPostHandler_ArticlePartJson(t *testing.T) {
 	}
 	s, _ := json.Marshal(r)
 	logrus.Infoln("jsonstring:", string(s))
+}
+
+func TestAutoSummary(t *testing.T) {
+	intoSentences := 3
+	text := `继前万达人力总监张洪举加盟维基链之后，近日阿里巴巴商业分析师高航以数百万年薪加入维基链团队，担任高级副总裁和首席数据分析师，负责对维基链商业模式设计及战略决策提供技术支持，对产品和运营搭建数字化监控体系，并利用自身国际化背景帮助维基链完成海外推广工作。高航先生将于5月12日正式入职。
+	高智商人才门萨俱乐部成员助力维基链
+
+	高航先生毕业于常春藤名校哥伦比亚大学，曾是华尔街Fishbowl公司首席数据科学家，能力出众，是门萨国际俱乐部高级成员，阿里巴巴数据分析师。跟张洪举先生一样，高航对于区块链的运营模式非常感兴趣，在维基链诞生后高航先生高度称赞了维基链的商业模式，在拒绝了腾讯和华为之后主动从阿里巴巴离职加入维基链。高航先生将用其敏锐的商业嗅觉和出色的商业分析能力帮助维基链从区块链行业大数据分析、维基链客户群大数据等多方面提升效率，归纳总结深层次规律，为公司经营决策提供战略部署支援。在高航加盟之后维基链整个商业模式都会得到优化。
+
+	维基链为何如此吸引人才
+
+	维基链是利用区块链与传统商业结合，利用区块链的去中心化特性解决传统模式的痛点，目前主打游戏竞猜行业，利用区块链的特性天然解决了传统竞猜行业存在的问题，前景远大。维基链团队重视人才、渴求人才，曾多次表示，区块链未来的竞争也必然是人才的竞争。每个加入维基链核心团队的人都会得到团队的重视，年薪往往也是七位数以上，维基链一直对有能力的人才敞开大门，这一直吸引了多领域的人才加入。
+
+	区块链项目的“人才争夺战”日益白热化，维基链在业内已实现阶段性领先。近期维基链主网上线，6月份世界杯开始，之后的维基链前景不可限量。
+
+	5月13日13:00，维基链将于深圳举办竞猜产品发布会全球首站。据维基链官方消息，此次发布会的规模可达到千人以上。`
+
+	bag := tldr.New()
+	result, _ := bag.Summarize(text, intoSentences)
+	fmt.Println("summary:", result)
 }

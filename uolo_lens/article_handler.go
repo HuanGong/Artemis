@@ -3,10 +3,8 @@ package uolo_lens
 import (
 	"artemis/uolo_lens/model"
 	"artemis/uolo_lens/utils"
-	"encoding/base64"
 	"fmt"
 	"github.com/labstack/echo"
-	"github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/russross/blackfriday.v2"
 	"io/ioutil"
@@ -122,15 +120,13 @@ func (handler *PostHandler) ArticleNew(ec echo.Context) error {
 	//data dir
 	timeNow := time.Now()
 	dateFolder := timeNow.Format("20060102")
-	uuidName, _ := uuid.NewV4()
-	articleUID := base64.RawURLEncoding.EncodeToString(uuidName[:])
-	fileName := articleUID + "." + form.Mime
-	//fileName := strings.Replace(form.Title, " ", "-", -1) + "." + form.Mime
+	articleId := utils.GenArticleUuidName()
+	fileName := articleId + "." + form.Mime
 	fullPath := filepath.Join(LensConfig.PostDataDir, dateFolder, fileName)
 
 	article := &model.Article{
 		Tag:       form.Tag,
-		Uuid:      articleUID,
+		Uuid:      articleId,
 		Mime:      form.Mime,
 		Title:     form.Title,
 		Origin:    form.Origin,
@@ -232,6 +228,62 @@ func (handler *PostHandler) ArticleMod(ec echo.Context) error {
 	})
 }
 
-func (handler *PostHandler) PublishFromUrl(ec echo.Context) error {
-	return ec.JSON(http.StatusOK, nil)
+func (handler *PostHandler) AutoPublish(ec echo.Context) error {
+	type (
+		In struct {
+			Url string `json:"url" query:"url" form:"url"`
+		}
+		Res struct {
+			Code    int32
+			Message string
+		}
+	)
+
+	in := &In{}
+	res := &Res{
+		Code: -1,
+	}
+	if err := ec.Bind(in); err != nil {
+		res.Code = -1
+		res.Message = "参数错误"
+		return ec.JSON(http.StatusOK, res)
+	}
+
+	result, err := utils.ExtractArticle(in.Url)
+	if err != nil {
+		logrus.Errorln("Extract Error:", err.Error())
+		res.Message = "解析错误"
+		return ec.JSON(http.StatusOK, res)
+	}
+
+	timeNow := time.Now()
+	dateFolder := timeNow.Format("20060102")
+
+	articleId := utils.GenArticleUuidName()
+	fileName := articleId + ".md"
+	fullPath := filepath.Join(LensConfig.PostDataDir, dateFolder, fileName)
+
+	article := &model.Article{
+		Tag:       result["keywords"],
+		Uuid:      utils.GenArticleUuidName(),
+		Mime:      "md",
+		Title:     result["title"],
+		Origin:    result["link"],
+		Author:    result["author"],
+		Summary:   result["desc"],
+		Rpath:     fullPath,
+		CreatedAt: timeNow,
+		Status:    0,
+		Count:     1,
+	}
+
+	_, err = Orm.Insert(article)
+	if err != nil {
+		res.Message = "数据库存储错误"
+		return ec.JSON(http.StatusOK, res)
+	}
+	go utils.SaveArticleAsFileSync(fullPath, result["content"])
+
+	res.Code = 0
+	return ec.JSON(http.StatusOK, res)
 }

@@ -2,7 +2,10 @@ package utils
 
 import (
 	"bytes"
+	"encoding/base64"
 	"github.com/pkg/errors"
+	"github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"
@@ -33,8 +36,9 @@ func ExtractArticleFromUrl(url string) (map[string]string, error) {
 	if err := cmd.Run(); err != nil {
 		return result, errors.Wrapf(err, "cmd execute error")
 	}
-
-	result["content"] = out.String()
+	const SFindStart = 0
+	const SFindHeader = 1
+	const SFindContent = 2
 
 	metaStart := false
 	for {
@@ -78,5 +82,93 @@ func ExtractArticleFromUrl(url string) (map[string]string, error) {
 			continue
 		}
 	}
+	result["content"] = out.String()
+
 	return result, nil
+}
+
+func ExtractArticle(url string) (map[string]string, error) {
+
+	result := make(map[string]string)
+
+	cmd := exec.Command("clean-mark", url)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+
+	if err := cmd.Run(); err != nil {
+		return result, errors.Wrapf(err, "cmd execute error")
+	}
+
+	const SHeaderStart = 0
+	const SExtractHeader = 1
+	const SExtractContent = 2
+
+	state := SHeaderStart
+
+EXTRACTLOOP:
+	for {
+		logrus.Println("state:", state)
+		switch state {
+		case SHeaderStart:
+			line, err := out.ReadString('\n')
+			if err != nil || io.EOF == err {
+				return result, errors.Wrapf(err, "cmd not get content")
+				break EXTRACTLOOP
+			}
+			if line == "---\n" {
+				state = SExtractHeader
+			}
+			continue EXTRACTLOOP
+
+		case SExtractHeader:
+
+			line, err := out.ReadString('\n')
+
+			if err != nil || io.EOF == err {
+				return result, errors.Wrapf(err, "cmd not get content")
+				break EXTRACTLOOP
+			}
+			if line == "---\n" {
+				state = SExtractContent
+				continue EXTRACTLOOP
+			}
+
+			heasers := strings.Split(line, ":")
+			if len(heasers) < 2 {
+				continue EXTRACTLOOP
+			}
+			switch heasers[0] {
+			case "link":
+				result["link"] = strings.Join(heasers[1:], ":")
+			case "title":
+				result["title"] = strings.Join(heasers[1:], ":")
+			case "date":
+				result["date"] = strings.Join(heasers[1:], ":")
+			case "description":
+				result["desc"] = strings.Join(heasers[1:], ":")
+			case "author":
+				result["author"] = strings.Join(heasers[1:], ":")
+			case "keywords":
+				result["keywords"] = strings.Join(heasers[1:], ":")
+			case "publisher":
+				result["publisher"] = strings.Join(heasers[1:], ":")
+			default:
+				continue EXTRACTLOOP
+			}
+
+		case SExtractContent:
+			content := out.String()
+			result["content"] = content
+			break EXTRACTLOOP
+		default:
+			break EXTRACTLOOP
+		}
+	}
+	return result, nil
+}
+
+func GenArticleUuidName() string {
+	uuidName, _ := uuid.NewV4()
+	articleUID := base64.RawURLEncoding.EncodeToString(uuidName[:])
+	return articleUID
 }

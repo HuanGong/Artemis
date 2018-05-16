@@ -2,9 +2,8 @@ package uolo_lens
 
 import (
 	"artemis/uolo_lens/model"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/go-redis/redis"
-	"github.com/gogo/protobuf/proto"
+	"artemis/uolo_lens/recommendation"
+	"artemis/uolo_lens/utils"
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -14,12 +13,6 @@ type (
 	LensHandler struct {
 	}
 )
-
-var defaultRecommondation = &model.Recommendations{
-	Articles: &model.RecommendArticles{
-		Details: make([]*model.RecommendArticles_Details, 0),
-	},
-}
 
 func (handler *LensHandler) LensList(ec echo.Context) error {
 	type Response struct {
@@ -37,43 +30,28 @@ func (handler *LensHandler) LensList(ec echo.Context) error {
 		res.Message = message
 		return ec.JSON(http.StatusOK, res)
 	}
-	// 从redis中获取当前用户聚合推荐的内容
-	redisClient, hasClient := RedisClientMap["recommend"]
-	if !hasClient {
-		logrus.Errorln("Recommendation Redis DB Broken")
-		return failedResponse(-1, "Query KV Error")
-	}
-	userId := "PublickUserID"
 
-	jwtToken := ec.Get("user")
-	if jwtToken != nil {
-		logrus.Debugln("User Not Login, Use Public Content")
-		oldClaims := jwtToken.(*jwt.Token).Claims.(jwt.MapClaims)
-		userId = (oldClaims["id"]).(string)
-		if len(userId) == 0 {
-			logrus.Errorln("jwt token error for nil jwt.Token")
-			return failedResponse(-3, "Jwt Claims Error")
-		}
+	userId, login := utils.IsUserLogin(ec)
+	if !login {
+		userId = recommendation.CommonRecommendationsKey
 	}
 
-	recommends := &model.Recommendations{}
-
-	content, err := redisClient.Get(userId).Result()
-	if err == redis.Nil || err != nil {
-		recommends = defaultRecommondation
-	} else {
-		err := proto.Unmarshal([]byte(content), recommends)
-		if err != nil {
-			recommends = defaultRecommondation
-			logrus.Errorln("Decode Recommendations from string failed, userid:", userId)
-		}
-	}
-
-	var articles []*model.Article = make([]*model.Article, 0)
-	err = Orm.OrderBy("RAND()").Limit(5).Find(&articles)
+	recommends, err := Recommender.GetLensRecommendation(&recommendation.RecommendContext{
+		UserId: userId,
+	})
 	if err != nil {
-		logrus.Debugln("Query DB Err:", err.Error())
-		return failedResponse(-4, "Qeury DB Failed")
+		return failedResponse(-1, "Not Found Content")
+	}
+
+	//extract articles
+	DbqueryIds := make([]string, 0)
+	for _, detail := range recommends.Articles.Details {
+		DbqueryIds = append(DbqueryIds, detail.Uid)
+	}
+	articles := make([]*model.Article, 0)
+	err = Orm.In("uuid", DbqueryIds).Find(&articles)
+	if err != nil {
+		return failedResponse(-2, "Query In DB Failed")
 	}
 	for _, a := range articles {
 		logrus.Debugln("Got Article:", a)
@@ -84,6 +62,5 @@ func (handler *LensHandler) LensList(ec echo.Context) error {
 	res.LensList = &model.LensList{
 		Articles: articles,
 	}
-	logrus.Debugln("response: ", res)
 	return ec.JSON(http.StatusOK, res)
 }

@@ -44,6 +44,7 @@ func ExtractArticleFromUrl(url string) (map[string]string, error) {
 	for {
 		line, err := out.ReadString('\n')
 		if err != nil || io.EOF == err {
+			logrus.Errorln("content:", out.String())
 			return result, errors.Wrapf(err, "cmd not get content")
 			break
 		}
@@ -90,8 +91,10 @@ func ExtractArticleFromUrl(url string) (map[string]string, error) {
 func ExtractArticle(url string) (map[string]string, error) {
 
 	result := make(map[string]string)
+	logrus.Debugln("url:", url)
+	//cmd := exec.Command("clean-mark", url)
+	cmd := exec.Command("pwd")
 
-	cmd := exec.Command("clean-mark", url)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
@@ -107,11 +110,11 @@ func ExtractArticle(url string) (map[string]string, error) {
 
 EXTRACTLOOP:
 	for {
-		logrus.Println("state:", state)
 		switch state {
 		case SHeaderStart:
 			line, err := out.ReadString('\n')
 			if err != nil || io.EOF == err {
+				logrus.Errorln("content:", out.String())
 				return result, errors.Wrapf(err, "cmd not get content")
 				break EXTRACTLOOP
 			}

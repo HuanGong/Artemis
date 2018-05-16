@@ -49,10 +49,12 @@ func (handler *PostHandler) ArticleDetail(ec echo.Context) error {
 	var fullUri string
 	if len(form.Path) == 0 { //404.html
 		fullUri = LensConfig.PostDataDir + "404-not-found.md"
+	} else {
+		fullUri = form.Path
 	}
-	fullUri = LensConfig.PostDataDir + form.Path
 
 	//TODO: do a lru cache search
+
 	content, err := ioutil.ReadFile(fullUri)
 	if os.IsNotExist(err) {
 		fullUri = LensConfig.PostDataDir + "404-not-found.md"
@@ -78,8 +80,10 @@ func (handler *PostHandler) ArticleDetail(ec echo.Context) error {
 		res.Content = string(unsafe)
 	default:
 		res.Code = -2
-		res.Message = fmt.Sprintf("Current Only Support Your Requested Type %s", form.Type)
+		res.Message = fmt.Sprintf("Current Not Support Your Requested Type %s", form.Type)
 	}
+
+	ec.Response().Header().Set("Cache-Control", "max-age=86400")
 
 	return ec.JSON(http.StatusOK, res)
 }

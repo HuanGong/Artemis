@@ -1,6 +1,7 @@
 package uolo_lens
 
 import (
+	"artemis/uolo_lens/recommendation"
 	"encoding/json"
 	"github.com/BurntSushi/toml"
 	"github.com/dgrijalva/jwt-go"
@@ -19,6 +20,7 @@ var (
 	Orm            *xorm.Engine
 	WhiteList      map[string]bool          = make(map[string]bool)
 	RedisClientMap map[string]*redis.Client = make(map[string]*redis.Client)
+	Recommender    *recommendation.RecommendImpl
 )
 
 type (
@@ -40,6 +42,8 @@ func NewUoloLens() *UoloLens {
 	initMysqlDB()
 
 	initRedis(LensConfig.RedisConfig)
+
+	Recommender = recommendation.NewRecommendImpl(instance)
 
 	return instance
 }
@@ -162,4 +166,12 @@ func initRedis(redisConf []RedisConfig) {
 		}
 		RedisClientMap[conf.Name] = rClient
 	}
+}
+
+func (impl *UoloLens) DBOrmEngine() *xorm.Engine {
+	return Orm
+}
+func (impl *UoloLens) RedisClient(name string) *redis.Client {
+	c, _ := RedisClientMap[name]
+	return c
 }

@@ -12,5 +12,5 @@ func IsUserLogin(ec echo.Context) (string, bool) {
 	}
 	oldClaims := jwtToken.(*jwt.Token).Claims.(jwt.MapClaims)
 	userId := (oldClaims["id"]).(string)
-	return userId, len(userId) == 0
+	return userId, len(userId) != 0
 }

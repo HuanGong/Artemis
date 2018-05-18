@@ -77,7 +77,7 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 			path := c.Path()
 
 			logrus.Debugln("Request Path:", c.Path())
-			return true
+			//return true
 
 			if strings.HasPrefix(path, "/utils") {
 				logrus.Debugln("skipper jwt verify")

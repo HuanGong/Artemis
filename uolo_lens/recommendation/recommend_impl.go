@@ -81,12 +81,13 @@ func (impl *RecommendImpl) BuildRecommendationsForUser(usr string) error {
 	if DbEngine == nil {
 		logrus.Errorln("OrmEngine Broken, CommonRecommendations Load Failed")
 	}
-	err := DbEngine.Select("*").OrderBy("id").Desc("id").Limit(5).Find(&articles)
+	err := DbEngine.Alias("tb").Select("*").Desc("id").Limit(5).Find(&articles)
 	if err != nil {
 		logrus.Errorln("Query Mysql DB Err:", err.Error())
 		return errors.New("mysql db query error")
 	}
 	for _, a := range articles {
+		logrus.Debugln("Got Recommend article, Id:", a.Id)
 		newRecommendations.Articles.Details = append(newRecommendations.Articles.Details, &model.RecommendArticles_Details{
 			Uid: a.Uuid,
 		})
@@ -103,13 +104,14 @@ func (impl *RecommendImpl) BuildRecommendationsForUser(usr string) error {
 		return errors.Wrapf(err, "Encode Recommendations to url encoded string failed")
 	}
 
-	_, err = client.Set(RecommendRedisPrefix+usr, raw, time.Hour*24).Result()
+	key := RecommendRedisPrefix+usr
+	_, err = client.Set(key, raw, time.Hour*24).Result()
 	if err != nil {
 		logrus.Errorln("Store CommonRecommendations To redis Failed", err.Error())
 		return errors.New("Store Commendations to redis failed, error:" + err.Error())
 	}
-	impl.CommonRecommendation = newRecommendations
-
+	logrus.Debugln("Generate Recommendation for user:", key)
+	//impl.CommonRecommendation = newRecommendations
 	return nil
 }
 
@@ -133,6 +135,7 @@ func (impl *RecommendImpl) GetLensRecommendation(context *RecommendContext) (*mo
 		}
 		recommends = impl.CommonRecommendation
 	} else {
+		logrus.Debugln("Got Content From Key:", key)
 		err = utils.PBDecode(content, recommends)
 	}
 

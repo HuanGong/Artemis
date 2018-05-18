@@ -101,8 +101,6 @@ func ExtractArticle(url string) (map[string]string, error) {
 		return result, errors.Wrapf(err, "cmd execute error")
 	}
 
-	logrus.Errorln("content:", out.String())
-
 	const SHeaderStart = 0
 	const SExtractHeader = 1
 	const SExtractContent = 2

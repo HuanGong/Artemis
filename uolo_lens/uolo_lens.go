@@ -85,7 +85,14 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 			} else if strings.HasPrefix(path, "/au/login") ||
 				strings.HasPrefix(path, "/au/signup") {
 				return true
+			} else {
+				_, hit := WhiteList[path]
+				if hit {
+					return true
+				}
 			}
+
+
 			return false
 		},
 	}))
@@ -101,6 +108,7 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	ArticleGr.POST("/detail", impl.postHandler.ArticleDetail)
 	ArticleGr.GET("/detail", impl.postHandler.ArticleDetail)
 	ArticleGr.GET("/auto/publish", impl.postHandler.AutoPublish)
+	WhiteList["/article/auto/publish"] = true
 
 	return nil
 }

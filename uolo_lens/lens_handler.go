@@ -33,13 +33,14 @@ func (handler *LensHandler) LensList(ec echo.Context) error {
 
 	userId, login := utils.IsUserLogin(ec)
 	if !login {
-		userId = recommendation.CommonRecommendationsKey
+		userId = recommendation.CommonRecommendationsUser
 	}
-
+	logrus.Debugf("User:[%s] ", userId)
 	recommends, err := Recommender.GetLensRecommendation(&recommendation.RecommendContext{
 		UserId: userId,
 	})
 	if err != nil {
+		logrus.Errorln("get recommend failed with err:", err.Error())
 		return failedResponse(-1, "Not Found Content")
 	}
 
@@ -52,9 +53,6 @@ func (handler *LensHandler) LensList(ec echo.Context) error {
 	err = Orm.In("uuid", DbqueryIds).Find(&articles)
 	if err != nil {
 		return failedResponse(-2, "Query In DB Failed")
-	}
-	for _, a := range articles {
-		logrus.Debugln("Got Article:", a)
 	}
 
 	res.Code = 0

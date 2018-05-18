@@ -2,15 +2,16 @@ package recommendation
 
 import (
 	"artemis/uolo_lens/model"
-	"github.com/gogo/protobuf/proto"
+	"artemis/uolo_lens/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"time"
 )
 
 const (
-	RecommendRedisPrefix     = "re_"
-	CommonRecommendationsKey = "re_commom_recommendations_user"
+	RecommendRedisPrefix      = "re_"
+	CommonRecommendationsUser = "commom_recommendations_user"
+	CommonRecommendationsKey  = "re_commom_recommendations_user"
 )
 
 type (
@@ -54,12 +55,61 @@ func (impl *RecommendImpl) ReloadCommonRecommendations() error {
 	if client == nil {
 		return errors.New("Null Redis client for recommend client")
 	}
-	_, err = client.Set(CommonRecommendationsKey, newRecommendations.String(), time.Hour*24).Result()
+
+	raw, err := utils.PBEncode(newRecommendations)
+	if err != nil {
+		return errors.Wrapf(err, "Encode Recommendations to url encoded string failed")
+	}
+
+	_, err = client.Set(CommonRecommendationsKey, raw, time.Hour*24).Result()
 	if err != nil {
 		logrus.Errorln("Store CommonRecommendations To redis Failed", err.Error())
 		return errors.New("Store Commendations to redis failed, error:" + err.Error())
 	}
 	impl.CommonRecommendation = newRecommendations
+	return nil
+}
+
+func (impl *RecommendImpl) BuildRecommendationsForUser(usr string) error {
+	newRecommendations := &model.Recommendations{
+		Articles: &model.RecommendArticles{
+			Details: make([]*model.RecommendArticles_Details, 0),
+		},
+	}
+	articles := make([]*model.Article, 0)
+	DbEngine := impl.DataProvider.DBOrmEngine()
+	if DbEngine == nil {
+		logrus.Errorln("OrmEngine Broken, CommonRecommendations Load Failed")
+	}
+	err := DbEngine.Select("*").OrderBy("id").Desc("id").Limit(5).Find(&articles)
+	if err != nil {
+		logrus.Errorln("Query Mysql DB Err:", err.Error())
+		return errors.New("mysql db query error")
+	}
+	for _, a := range articles {
+		newRecommendations.Articles.Details = append(newRecommendations.Articles.Details, &model.RecommendArticles_Details{
+			Uid: a.Uuid,
+		})
+	}
+
+	// store to redis
+	client := impl.DataProvider.RedisClient("recommend")
+	if client == nil {
+		return errors.New("Null Redis client for recommend client")
+	}
+
+	raw, err := utils.PBEncode(newRecommendations)
+	if err != nil {
+		return errors.Wrapf(err, "Encode Recommendations to url encoded string failed")
+	}
+
+	_, err = client.Set(RecommendRedisPrefix+usr, raw, time.Hour*24).Result()
+	if err != nil {
+		logrus.Errorln("Store CommonRecommendations To redis Failed", err.Error())
+		return errors.New("Store Commendations to redis failed, error:" + err.Error())
+	}
+	impl.CommonRecommendation = newRecommendations
+
 	return nil
 }
 
@@ -79,10 +129,11 @@ func (impl *RecommendImpl) GetLensRecommendation(context *RecommendContext) (*mo
 		err = nil
 		if impl.CommonRecommendation == nil {
 			err = impl.ReloadCommonRecommendations()
+			go impl.BuildRecommendationsForUser(context.UserId)
 		}
 		recommends = impl.CommonRecommendation
 	} else {
-		err = proto.Unmarshal([]byte(content), recommends)
+		err = utils.PBDecode(content, recommends)
 	}
 
 	return recommends, err

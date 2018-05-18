@@ -92,8 +92,7 @@ func ExtractArticle(url string) (map[string]string, error) {
 
 	result := make(map[string]string)
 	logrus.Debugln("url:", url)
-	//cmd := exec.Command("clean-mark", url)
-	cmd := exec.Command("pwd")
+	cmd := exec.Command("clean-mark", url)
 
 	var out bytes.Buffer
 	cmd.Stdout = &out
@@ -101,6 +100,8 @@ func ExtractArticle(url string) (map[string]string, error) {
 	if err := cmd.Run(); err != nil {
 		return result, errors.Wrapf(err, "cmd execute error")
 	}
+
+	logrus.Errorln("content:", out.String())
 
 	const SHeaderStart = 0
 	const SExtractHeader = 1
@@ -114,7 +115,6 @@ EXTRACTLOOP:
 		case SHeaderStart:
 			line, err := out.ReadString('\n')
 			if err != nil || io.EOF == err {
-				logrus.Errorln("content:", out.String())
 				return result, errors.Wrapf(err, "cmd not get content")
 				break EXTRACTLOOP
 			}

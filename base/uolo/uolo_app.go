@@ -130,6 +130,7 @@ func (app *App) Run() error {
 		Commands: app.subCommands,
 	}
 
+	app.content.BeforeCliRun()
 	return cli.Run(os.Args)
 }
 

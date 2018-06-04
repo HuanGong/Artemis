@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	RecommendRedisPrefix      = "re_"
-	CommonRecommendationsUser = "commom_recommendations_user"
-	CommonRecommendationsKey  = "re_commom_recommendations_user"
+	RecommendRedisPrefix        = "re_"
+	CommonRecommendationsUser   = "commom_recommendations_user"
+	CommonRecommendationsKey    = "re_commom_recommendations_user"
+	RecommendationRedisLifeTime = time.Hour * 1
 )
 
 type (
@@ -38,11 +39,11 @@ func (impl *RecommendImpl) ReloadCommonRecommendations() error {
 	DbEngine := impl.DataProvider.DBOrmEngine()
 	if DbEngine == nil {
 		logrus.Errorln("OrmEngine Broken, CommonRecommendations Load Failed")
+		return errors.New("OrmEngine Broken")
 	}
 	err := DbEngine.Select("*").OrderBy("id").Desc("id").Limit(5).Find(&articles)
 	if err != nil {
-		logrus.Errorln("Query Mysql DB Err:", err.Error())
-		return errors.New("mysql db query error")
+		return errors.Wrapf(err, "mysql db query error")
 	}
 	for _, a := range articles {
 		newRecommendations.Articles.Details = append(newRecommendations.Articles.Details, &model.RecommendArticles_Details{
@@ -80,11 +81,12 @@ func (impl *RecommendImpl) BuildRecommendationsForUser(usr string) error {
 	DbEngine := impl.DataProvider.DBOrmEngine()
 	if DbEngine == nil {
 		logrus.Errorln("OrmEngine Broken, CommonRecommendations Load Failed")
+		return errors.New("OrmEngine Broken")
 	}
 	err := DbEngine.Alias("tb").Select("*").Desc("id").Limit(5).Find(&articles)
 	if err != nil {
-		logrus.Errorln("Query Mysql DB Err:", err.Error())
-		return errors.New("mysql db query error")
+		logrus.Errorln("mysql db query error:", err.Error())
+		return errors.Wrapf(err, "mysql db query error")
 	}
 	for _, a := range articles {
 		logrus.Debugln("Got Recommend article, Id:", a.Id)
@@ -96,22 +98,23 @@ func (impl *RecommendImpl) BuildRecommendationsForUser(usr string) error {
 	// store to redis
 	client := impl.DataProvider.RedisClient("recommend")
 	if client == nil {
+		logrus.Errorln("Null Redis client for recommend client")
 		return errors.New("Null Redis client for recommend client")
 	}
 
 	raw, err := utils.PBEncode(newRecommendations)
 	if err != nil {
+		logrus.Errorln("Encode Recommendation to url encoded string failed")
 		return errors.Wrapf(err, "Encode Recommendations to url encoded string failed")
 	}
 
-	key := RecommendRedisPrefix+usr
-	_, err = client.Set(key, raw, time.Hour*24).Result()
+	key := RecommendRedisPrefix + usr
+	_, err = client.Set(key, raw, RecommendationRedisLifeTime).Result()
 	if err != nil {
 		logrus.Errorln("Store CommonRecommendations To redis Failed", err.Error())
 		return errors.New("Store Commendations to redis failed, error:" + err.Error())
 	}
 	logrus.Debugln("Generate Recommendation for user:", key)
-	//impl.CommonRecommendation = newRecommendations
 	return nil
 }
 
@@ -135,7 +138,7 @@ func (impl *RecommendImpl) GetLensRecommendation(context *RecommendContext) (*mo
 		}
 		recommends = impl.CommonRecommendation
 	} else {
-		logrus.Debugln("Got Content From Key:", key)
+		logrus.Debugln("Got Content From User:", key)
 		err = utils.PBDecode(content, recommends)
 	}
 

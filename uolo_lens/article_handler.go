@@ -124,7 +124,7 @@ func (handler *PostHandler) ArticleNew(ec echo.Context) error {
 	//data dir
 	timeNow := time.Now()
 	dateFolder := timeNow.Format("20060102")
-	articleId := utils.GenArticleUuidName()
+	articleId := utils.GenUoloUUID()
 	fileName := articleId + "." + form.Mime
 	fullPath := filepath.Join(LensConfig.PostDataDir, dateFolder, fileName)
 
@@ -263,13 +263,13 @@ func (handler *PostHandler) AutoPublish(ec echo.Context) error {
 	timeNow := time.Now()
 	dateFolder := timeNow.Format("20060102")
 
-	articleId := utils.GenArticleUuidName()
+	articleId := utils.GenUoloUUID()
 	fileName := articleId + ".md"
 	fullPath := filepath.Join(LensConfig.PostDataDir, dateFolder, fileName)
 
 	article := &model.Article{
 		Tag:       result["keywords"],
-		Uuid:      utils.GenArticleUuidName(),
+		Uuid:      articleId,
 		Mime:      "md",
 		Title:     result["title"],
 		Origin:    result["link"],

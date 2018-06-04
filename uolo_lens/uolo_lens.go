@@ -3,6 +3,7 @@ package uolo_lens
 import (
 	"artemis/uolo_lens/recommendation"
 	"encoding/json"
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-redis/redis"
@@ -25,16 +26,20 @@ var (
 
 type (
 	UoloLens struct {
-		postHandler *PostHandler
-		lensHandler *LensHandler
+		postHandler   *PostHandler
+		lensHandler   *LensHandler
+		toolsHandler  *ToolsHandler
+		thingsHandler *ThingsHandler
 	}
 )
 
 func NewUoloLens() *UoloLens {
 
 	instance := &UoloLens{
-		postHandler: &PostHandler{},
-		lensHandler: &LensHandler{},
+		postHandler:   &PostHandler{},
+		lensHandler:   &LensHandler{},
+		toolsHandler:  &ToolsHandler{},
+		thingsHandler: &ThingsHandler{},
 	}
 
 	loadConfig()
@@ -73,33 +78,16 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
 		SigningKey: []byte(LensConfig.JWTSecretkey),
 		Claims:     jwt.MapClaims{},
-		Skipper: func(c echo.Context) bool {
-			path := c.Path()
-
-			logrus.Debugln("Request Path:", c.Path())
-			//return true
-
-			if strings.HasPrefix(path, "/utils") {
-				logrus.Debugln("skipper jwt verify")
-				return true
-			} else if strings.HasPrefix(path, "/au/login") ||
-				strings.HasPrefix(path, "/au/signup") {
-				return true
-			} else {
-				_, hit := WhiteList[path]
-				if hit {
-					return true
-				}
-			}
-
-
-			return false
-		},
+		Skipper:    impl.JwtSkipperChecker,
 	}))
+	ec.HTTPErrorHandler = func(err error, ec echo.Context) {
+		logrus.Debugln(fmt.Sprintf("Request %s from ip %s occur error %s", ec.Path(), ec.RealIP(), err.Error()))
+	}
 
 	ec.GET("/lenslist", impl.lensHandler.LensList)
 
-	utilsGr := ec.Group("/utils")
+	utilsGr := ec.Group("/tools")
+	utilsGr.GET("/weather/query", impl.toolsHandler.QueryWeather)
 	utilsGr.GET("/extract/article", impl.postHandler.DialysisConent)
 
 	ArticleGr := ec.Group("/article")
@@ -109,6 +97,13 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	ArticleGr.GET("/detail", impl.postHandler.ArticleDetail)
 	ArticleGr.GET("/auto/publish", impl.postHandler.AutoPublish)
 	WhiteList["/article/auto/publish"] = true
+
+	ThingsGr := ec.Group("/things/v1")
+	ThingsGr.POST("/new", impl.thingsHandler.NewThings)
+	ThingsGr.GET("/list", impl.thingsHandler.GetThingsList)
+	ThingsGr.GET("/done/list", impl.thingsHandler.GetDoneThingsList)
+	ThingsGr.POST("/finish", impl.thingsHandler.MarkUoloThingFinish)
+	ThingsGr.POST("/delete", impl.thingsHandler.DeleteUoloThing)
 
 	return nil
 }
@@ -179,7 +174,24 @@ func initRedis(redisConf []RedisConfig) {
 func (impl *UoloLens) DBOrmEngine() *xorm.Engine {
 	return Orm
 }
+
 func (impl *UoloLens) RedisClient(name string) *redis.Client {
 	c, _ := RedisClientMap[name]
 	return c
+}
+
+func (impl *UoloLens) JwtSkipperChecker(ec echo.Context) bool {
+	path := ec.Path()
+
+	return true
+	if strings.HasPrefix(path, "/utils") {
+		return true
+	}
+
+	_, hit := WhiteList[path]
+	if hit {
+		return true
+	}
+
+	return false
 }

@@ -12,3 +12,7 @@ message RecommendArticles {
 message Recommendations {
     RecommendArticles articles = 1;
 }
+
+message RecommendContent {
+    int32 type = 1; /*1: article 2: calendar 3: TodoList Native */
+}

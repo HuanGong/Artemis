@@ -168,8 +168,13 @@ EXTRACTLOOP:
 	return result, nil
 }
 
-func GenArticleUuidName() string {
+func GenUoloUUID() string {
 	uuidName, _ := uuid.NewV4()
 	articleUID := base64.RawURLEncoding.EncodeToString(uuidName[:])
 	return articleUID
+}
+
+func GenUUID() string {
+	uuidGen, _ := uuid.NewV4()
+	return uuidGen.String()
 }

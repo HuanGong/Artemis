@@ -16,6 +16,19 @@ type (
 		WdSpeed  string `json:"WS"`
 		Humidity string `json:"SD"`
 	}
+
+	AvatarWeatherInfo struct {
+		CityName      string
+		Week          string
+		Date          string
+		RtWindInfo    string
+		RtWindPower   string
+		RtWeather     string
+		RtTemperature string
+		Pm25Level     string
+		Pm25Current   string
+		Pm25Quality   string
+	}
 )
 
 const (

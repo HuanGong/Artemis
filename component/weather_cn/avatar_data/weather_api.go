@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
@@ -78,6 +79,7 @@ func GetWeather(city string, apikey string) (*AvatarWeather, error) {
 	fmtApi := "http://api.avatardata.cn/Weather/Query?key=%s&cityname=%s"
 
 	fullApi := fmt.Sprintf(fmtApi, apikey, city)
+	logrus.Debugln("Avatar Weater Request Full Url:", fullApi)
 	resp, err := http.Get(fullApi)
 	if err != nil {
 		return weather, err

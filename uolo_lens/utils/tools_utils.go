@@ -13,12 +13,12 @@ func GetCityByIp(ip string) string {
 	const taobaoIp2GeoInfoUrl string = "http://ip.taobao.com/service/getIpInfo.php?ip="
 	resp, err := http.Get(taobaoIp2GeoInfoUrl + ip)
 	if err != nil {
-		return "beijing"
+		return "北京"
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "beijing"
+		return "北京"
 	}
 	type (
 		Data struct {

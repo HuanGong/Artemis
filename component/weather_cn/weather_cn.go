@@ -1,11 +1,14 @@
 package weather_cn
 
 import (
+	"artemis/component/weather_cn/avatar_data"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
+	"sync"
+	"time"
 )
 
 type (
@@ -29,6 +32,11 @@ type (
 		Pm25Current   string
 		Pm25Quality   string
 	}
+
+	AvatarWeatherCache struct {
+		T       time.Time
+		Weather *avatar_data.AvatarWeather
+	}
 )
 
 const (
@@ -39,6 +47,8 @@ var (
 	DebugEnable        bool              = false
 	WeatherItems       []WeatherItem     = make([]WeatherItem, 0)
 	CityWeatherCodeMap map[string]string = make(map[string]string)
+	AvatarCacheMap     sync.Map
+	AvatarDataApiKey   = "afdb952ba7aa4a419acd05e754587b17"
 )
 
 func init() {
@@ -84,4 +94,27 @@ func GetWeather(city string) (WeatherCnInfo, error) {
 	fmt.Println(string(body))
 	err = json.Unmarshal(body, result)
 	return result.Info, err
+}
+
+func GetAvatarWeatherWithCache(city string) (*avatar_data.AvatarWeather, error) {
+	cache, has := AvatarCacheMap.Load(city)
+	now := time.Now()
+	if has {
+		weatherCache := cache.(*AvatarWeatherCache)
+		if weatherCache.T.Add(time.Hour * 4).After(now) {
+			return weatherCache.Weather, nil
+		}
+	}
+
+	weather, err := avatar_data.GetWeather(city, AvatarDataApiKey)
+	if err != nil {
+		return nil, err
+	}
+
+	NewCache := &AvatarWeatherCache{
+		T:       now,
+		Weather: weather,
+	}
+	AvatarCacheMap.Store(city, NewCache)
+	return weather, nil
 }

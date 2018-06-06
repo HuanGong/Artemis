@@ -2,7 +2,9 @@ package uolo_lens
 
 import (
 	"artemis/component/weather_cn"
+	"artemis/component/weather_cn/avatar_data"
 	"artemis/uolo_lens/utils"
+	"fmt"
 	"github.com/labstack/echo"
 	"net/http"
 )
@@ -18,14 +20,11 @@ func (handler *ToolsHandler) QueryWeather(ec echo.Context) error {
 		city = utils.GetCityByIp(ec.RealIP())
 	}
 
-	info, err := weather_cn.GetWeather(city)
+	info, err := weather_cn.GetAvatarWeatherWithCache(city)
 	if err != nil {
-		ec.JSON(http.StatusOK, &weather_cn.WeatherCnInfo{
-			City:     "UOLO",
-			Temp:     "FIT",
-			Wind:     "清风",
-			WdSpeed:  "微风",
-			Humidity: "舒适",
+		return ec.JSON(http.StatusOK, &avatar_data.AvatarWeather{
+			ErrorCode: -1,
+			Reason:    fmt.Sprintf("获取%s天气失败", city),
 		})
 	}
 	return ec.JSON(http.StatusOK, info)

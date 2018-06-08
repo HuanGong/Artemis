@@ -1,10 +1,10 @@
 CREATE TABLE `things` (
-  `owner`       varchar(64)   NOT NULL,
   `uuid`        varchar(64)   NOT NULL,
+  `owner`       varchar(64)   NOT NULL,
   `content`     varchar(256)  NOT NULL,
   `start_time`  datetime      NOT NULL,
   `archive_goal` bool         NOT NULL DEFAULT false,
-  PRIMARY KEY (`owner`)
+  PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `things_comment` (

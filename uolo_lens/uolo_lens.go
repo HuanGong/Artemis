@@ -9,17 +9,17 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
+	"github.com/importcjj/trie-go"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 var (
 	LensConfig     Config
 	Orm            *xorm.Engine
-	WhiteList      map[string]bool          = make(map[string]bool)
+	JwtBlockTrie   *trie.Trie               = trie.New()
 	RedisClientMap map[string]*redis.Client = make(map[string]*redis.Client)
 	Recommender    *recommendation.RecommendImpl
 )
@@ -84,26 +84,33 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 		logrus.Debugln(fmt.Sprintf("Request %s from ip %s occur error %s", ec.Path(), ec.RealIP(), err.Error()))
 	}
 
-	ec.GET("/lenslist", impl.lensHandler.LensList)
+	ec.GET("/lenslist", impl.lensHandler.LensList) // public
 
-	utilsGr := ec.Group("/tools")
+	utilsGr := ec.Group("/tools") // public
 	utilsGr.GET("/weather/query", impl.toolsHandler.QueryWeather)
 	utilsGr.GET("/extract/article", impl.postHandler.DialysisConent)
 
 	ArticleGr := ec.Group("/article")
 	ArticleGr.POST("/new", impl.postHandler.ArticleNew)
 	ArticleGr.POST("/mod", impl.postHandler.ArticleMod)
-	ArticleGr.POST("/detail", impl.postHandler.ArticleDetail)
 	ArticleGr.GET("/detail", impl.postHandler.ArticleDetail)
 	ArticleGr.GET("/auto/publish", impl.postHandler.AutoPublish)
-	WhiteList["/article/auto/publish"] = true
+
+	// JWT Auth Needed Path
+	JwtBlockTrie.Put("/article/new", true)
+	JwtBlockTrie.Put("/article/mod", true)
+	JwtBlockTrie.Put("/article/auto/publish", true)
 
 	ThingsGr := ec.Group("/things/v1")
+	ThingsGr.GET("/list/todo", impl.thingsHandler.GetThingsList)         //public
+	ThingsGr.GET("/list/finished", impl.thingsHandler.GetDoneThingsList) //public
+
 	ThingsGr.POST("/new", impl.thingsHandler.NewThings)
-	ThingsGr.GET("/list", impl.thingsHandler.GetThingsList)
-	ThingsGr.GET("/done/list", impl.thingsHandler.GetDoneThingsList)
-	ThingsGr.POST("/finish", impl.thingsHandler.MarkUoloThingFinish)
 	ThingsGr.POST("/delete", impl.thingsHandler.DeleteUoloThing)
+	ThingsGr.POST("/finish", impl.thingsHandler.MarkUoloThingFinish)
+	JwtBlockTrie.Put("/things/v1/new", true)
+	JwtBlockTrie.Put("/things/v1/finish", true)
+	JwtBlockTrie.Put("/things/v1/delete", true)
 
 	return nil
 }
@@ -183,14 +190,8 @@ func (impl *UoloLens) RedisClient(name string) *redis.Client {
 func (impl *UoloLens) JwtSkipperChecker(ec echo.Context) bool {
 	path := ec.Path()
 
-	return true
-	if strings.HasPrefix(path, "/utils") {
-		return true
-	}
-
-	_, hit := WhiteList[path]
-	if hit {
-		return true
+	if ok, result := JwtBlockTrie.Match(path); ok && result.Value.(bool) == true {
+		return false
 	}
 
 	return false

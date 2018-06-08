@@ -9,12 +9,12 @@ import (
 )
 
 func TestThingsHandler_NewThings(t *testing.T) {
-	apiUrl := "http://localhost:3006/things/v1/new"
-	//apiUrl := "https://api.echoface.cn/lens/article/new"
+	//apiUrl := "http://localhost:3006/things/v1/new"
+	apiUrl := "https://api.echoface.cn/lens/things/v1/new"
 
 	form := url.Values{}
 
-	form["content"] = []string{"Welcome to UoloThings"}
+	form["content"] = []string{"I Love My BabyXiao"}
 	form["comment"] = []string{"我希望能很好的完成它！"}
 
 	res, err := http.PostForm(apiUrl, form)

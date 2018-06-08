@@ -144,3 +144,17 @@ func TestAutoSummary(t *testing.T) {
 	result, _ := bag.Summarize(text, intoSentences)
 	fmt.Println("summary:", result)
 }
+
+func TestWeixinList(t *testing.T) {
+	api := "http://api.avatardata.cn/WxNews/Query?key=7262cd47bb6d4d22a068cf0baf0fd3e0&page=1&rows=10&keyword=北京"
+
+	res, err := http.Get(api)
+	if err != nil {
+		logrus.Println("Failed HttpRequest")
+		return
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	fmt.Println("Result:", string(body))
+
+}

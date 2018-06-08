@@ -18,7 +18,7 @@ func (handler *ThingsHandler) NewThings(ec echo.Context) error {
 	type (
 		NewThingsFrom struct {
 			Content string `json:"content" form:"content"`
-			Comment string `json:"comment" form:"comment"`
+			Comment string `json:"comment" form:"comment"` //first comment
 		}
 		NewThingsResponse struct {
 			Code    int32  `json:"code"`

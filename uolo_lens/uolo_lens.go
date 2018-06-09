@@ -19,7 +19,7 @@ import (
 var (
 	LensConfig     Config
 	Orm            *xorm.Engine
-	JwtBlockTrie   *trie.Trie               = trie.New()
+	JwtBlockPath   *trie.Trie               = trie.New()
 	RedisClientMap map[string]*redis.Client = make(map[string]*redis.Client)
 	Recommender    *recommendation.RecommendImpl
 )
@@ -97,9 +97,9 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	ArticleGr.GET("/auto/publish", impl.postHandler.AutoPublish)
 
 	// JWT Auth Needed Path
-	JwtBlockTrie.Put("/article/new", true)
-	JwtBlockTrie.Put("/article/mod", true)
-	JwtBlockTrie.Put("/article/auto/publish", true)
+	JwtBlockPath.Put("/article/new", true)
+	JwtBlockPath.Put("/article/mod", true)
+	JwtBlockPath.Put("/article/auto/publish", true)
 
 	ThingsGr := ec.Group("/things/v1")
 	ThingsGr.GET("/list/todo", impl.thingsHandler.GetThingsList)         //public
@@ -108,9 +108,10 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	ThingsGr.POST("/new", impl.thingsHandler.NewThings)
 	ThingsGr.POST("/delete", impl.thingsHandler.DeleteUoloThing)
 	ThingsGr.POST("/finish", impl.thingsHandler.MarkUoloThingFinish)
-	JwtBlockTrie.Put("/things/v1/new", true)
-	JwtBlockTrie.Put("/things/v1/finish", true)
-	JwtBlockTrie.Put("/things/v1/delete", true)
+
+	JwtBlockPath.Put("/things/v1/new", true)
+	JwtBlockPath.Put("/things/v1/finish", true)
+	JwtBlockPath.Put("/things/v1/delete", true)
 
 	return nil
 }
@@ -189,10 +190,11 @@ func (impl *UoloLens) RedisClient(name string) *redis.Client {
 
 func (impl *UoloLens) JwtSkipperChecker(ec echo.Context) bool {
 	path := ec.Path()
-
-	if ok, result := JwtBlockTrie.Match(path); ok && result.Value.(bool) == true {
+	logrus.Debugln("request Path", path)
+	if ok, result := JwtBlockPath.Match(path); ok && result.Value.(bool) == true {
 		return false
 	}
 
-	return false
+	logrus.Debugln("request Path JwtBlock Trie Not Match")
+	return true
 }

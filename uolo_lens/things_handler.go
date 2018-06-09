@@ -37,11 +37,10 @@ func (handler *ThingsHandler) NewThings(ec echo.Context) error {
 
 	userId, login := utils.IsUserLogin(ec)
 	if login == false {
-		userId = "test"
-		//return ec.JSON(http.StatusOK, &NewThingsResponse{
-		//	Code:    -2,
-		//	Message: "登陆校验错误",
-		//})
+		return ec.JSON(http.StatusOK, &NewThingsResponse{
+			Code:    -2,
+			Message: "登陆校验错误",
+		})
 	}
 
 	thing := &model.UoloThing{
@@ -106,11 +105,7 @@ func (handler *ThingsHandler) GetThingsList(ec echo.Context) error {
 
 	userId, login := utils.IsUserLogin(ec)
 	if login == false {
-		userId = "test"
-		//return ec.JSON(http.StatusOK, &Res{
-		//	Code:    -1,
-		//	Message: "登陆校验错误",
-		//})
+		userId = "public_user"
 	}
 
 	things := make([]*model.UoloThing, 0)
@@ -187,11 +182,9 @@ func (handler *ThingsHandler) MarkUoloThingFinish(ec echo.Context) error {
 
 	userId, login := utils.IsUserLogin(ec)
 	if login == false {
-		userId = "test"
-		//return Responser(-2, "登陆信息错误")
+		return Responser(-2, "登陆信息错误")
 	}
 
-	logrus.Debugln("form:", form)
 	result, err := Orm.Exec("update things set archive_goal = ? where things.owner = ? and things.uuid = ?", true, userId, form.Uuid)
 	if err != nil {
 		logrus.Errorf("Update UoloThing %s Failed in db", form.Uuid)
@@ -231,8 +224,7 @@ func (handler *ThingsHandler) DeleteUoloThing(ec echo.Context) error {
 
 	userId, login := utils.IsUserLogin(ec)
 	if login == false {
-		userId = "test"
-		//return Responser(-2, "登陆校验错误")
+		return Responser(-2, "登陆校验错误")
 	}
 
 	session := Orm.NewSession()

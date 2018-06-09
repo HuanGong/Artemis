@@ -39,10 +39,10 @@ func (handler *PostHandler) ArticleDetail(ec echo.Context) error {
 
 	form := &PostContentForm{}
 
-	if err := ec.Bind(form); err != nil {
+	if err := ec.Bind(form); err != nil || len(form.Type) == 0 {
 		return ec.JSON(http.StatusOK, Response{
 			Code:    -1,
-			Message: "bad argument",
+			Message: "参数错误",
 		})
 	}
 
@@ -194,7 +194,7 @@ func (handler *PostHandler) DialysisConent(ec echo.Context) error {
 	}
 
 	in := &In{}
-	if err := ec.Bind(in); err != nil {
+	if err := ec.Bind(in); err != nil || len(in.Url) == 0 {
 		res.Message = "参数错误"
 		return ec.JSON(http.StatusOK, res)
 	}
@@ -209,13 +209,13 @@ func (handler *PostHandler) DialysisConent(ec echo.Context) error {
 	res.Code = 0
 	res.Message = "Ok"
 	res.Mime = "md"
-	res.Desc = result["desc"]
-	res.Date = result["date"]
-	res.Title = result["title"]
-	res.Origin = result["link"]
-	res.Author = result["author"]
-	res.Keywords = result["keywords"]
-	res.Content = result["content"]
+	res.Desc, _ = result["desc"]
+	res.Date, _ = result["date"]
+	res.Title, _ = result["title"]
+	res.Origin, _ = result["link"]
+	res.Author, _ = result["author"]
+	res.Keywords, _ = result["keywords"]
+	res.Content, _ = result["content"]
 	return ec.JSON(http.StatusOK, res)
 }
 

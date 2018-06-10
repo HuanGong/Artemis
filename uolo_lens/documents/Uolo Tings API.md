@@ -2,13 +2,13 @@
 
 
 
-- /things/v1/todo    GET    PUBLIC
+- /things/v1/list/todo    GET    PUBLIC
 
 获取当前用户的未完成的Things， 当请求是未授权用户时， 返回公共things
 
 
 
-- /things/v1/finished GET  Public
+- /things/v1/list/finished GET  Public
 
 获取用户已经完成的Things， 当请求是未授权用户时， 返回公共things
 

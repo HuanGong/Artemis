@@ -1,12 +1,14 @@
 package uolo
 
 import (
-	"os"
-	"sync"
+	"fmt"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
-	"gopkg.in/urfave/cli.v2"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/urfave/cli.v2"
+	"net/http"
+	"os"
+	"sync"
 )
 
 type FlowRunType int32
@@ -60,10 +62,10 @@ func (app *App) WithHttpServer(content HttpServerContent) *App {
 			//e.Binder = &binder.PbRequestBinder{}
 
 			//e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-				//AllowOrigins: []string{"*"},
-				//AllowMethods: []string{echo.GET, echo.POST, echo.OPTIONS, echo.DELETE, echo.HEAD},
+			//AllowOrigins: []string{"*"},
+			//AllowMethods: []string{echo.GET, echo.POST, echo.OPTIONS, echo.DELETE, echo.HEAD},
 			//}))
-
+			e.HTTPErrorHandler = HttpErrorHandler
 			if err := content.OnServerInitialized(e); err != nil {
 				log.Errorf("App Run WithHttpServer %s Failed With Error %s\n", content.HttpServerName(), err.Error())
 				return errors.Wrap(err, "Start HttpServer Failed")
@@ -122,11 +124,11 @@ func (app *App) CliAction(ctx *cli.Context) error {
 
 func (app *App) Run() error {
 	cli := &cli.App{
-		Name:    app.name,
-		Version: app.version,
-		Usage:   app.description,
-		Flags:   app.AddAppCliFlags(),
-		Action:  app.CliAction,
+		Name:     app.name,
+		Version:  app.version,
+		Usage:    app.description,
+		Flags:    app.AddAppCliFlags(),
+		Action:   app.CliAction,
 		Commands: app.subCommands,
 	}
 
@@ -147,4 +149,34 @@ func (app *App) AddAppCliFlags() []cli.Flag {
 	}
 
 	return flags
+}
+
+func HttpErrorHandler(err error, c echo.Context) {
+	log.Debugln(fmt.Sprintf("Request %s from ip %s occur error %s", c.Path(), c.RealIP(), err.Error()))
+
+	var (
+		code = http.StatusInternalServerError
+		msg  interface{}
+	)
+
+	if he, ok := err.(*echo.HTTPError); ok {
+		code = he.Code
+		msg = he.Message
+		if he.Inner != nil {
+			msg = fmt.Sprintf("%v, %v", err, he.Inner)
+		}
+	} else {
+		msg = http.StatusText(code)
+	}
+	if _, ok := msg.(string); ok {
+		msg = map[string]interface{}{"message": msg}
+	}
+
+	if !c.Response().Committed {
+		if c.Request().Method == "HEAD" { // Issue #608
+			err = c.NoContent(code)
+		} else {
+			err = c.JSON(code, msg)
+		}
+	}
 }

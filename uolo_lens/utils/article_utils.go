@@ -14,6 +14,10 @@ import (
 	"strings"
 )
 
+var (
+	CleanMarkPath = "tools/clean-mark/bin/clean-mark"
+)
+
 func SaveArticleAsFileSync(fullPath, content string) error {
 	folder, _ := filepath.Split(fullPath)
 
@@ -28,8 +32,11 @@ func SaveArticleAsFileSync(fullPath, content string) error {
 func ExtractArticleFromUrl(url string) (map[string]string, error) {
 
 	result := make(map[string]string)
+	if len(url) == 0 {
+		return result, errors.New("Url Not Correct")
+	}
 
-	cmd := exec.Command("clean-mark", url)
+	cmd := exec.Command(CleanMarkPath, url)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 
@@ -91,8 +98,11 @@ func ExtractArticleFromUrl(url string) (map[string]string, error) {
 func ExtractArticle(url string) (map[string]string, error) {
 
 	result := make(map[string]string)
-	logrus.Debugln("url:", url)
-	cmd := exec.Command("clean-mark", url)
+	if len(url) == 0 {
+		return result, errors.New("Url Not Correct")
+	}
+
+	cmd := exec.Command(CleanMarkPath, url)
 
 	var out bytes.Buffer
 	cmd.Stdout = &out

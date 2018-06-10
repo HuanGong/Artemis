@@ -93,6 +93,31 @@ func (handler *ThingsHandler) NewThings(ec echo.Context) error {
 	})
 }
 
+func (handler *ThingsHandler) GetPublicThingsList(ec echo.Context) error {
+	type (
+		Res struct {
+			Code    int32              `json:"code"`
+			Message string             `json:"message"`
+			Things  []*model.UoloThing `json:"things,omitempty"`
+		}
+	)
+
+	things := make([]*model.UoloThing, 0)
+	err := Orm.Where("owner=?", "public_user").And("archive_goal=?", false).Find(&things)
+	if err != nil {
+		logrus.Debugln("err:", err.Error())
+		return ec.JSON(200, &Res{
+			Code:    -2,
+			Message: "获取Things失败",
+		})
+	}
+
+	return ec.JSON(200, &Res{
+		Code:   0,
+		Things: things,
+	})
+}
+
 func (handler *ThingsHandler) GetThingsList(ec echo.Context) error {
 
 	type (
@@ -105,7 +130,10 @@ func (handler *ThingsHandler) GetThingsList(ec echo.Context) error {
 
 	userId, login := utils.IsUserLogin(ec)
 	if login == false {
-		userId = "public_user"
+		return ec.JSON(200, &Res{
+			Code:    -1,
+			Message: "获取用户ID失败",
+		})
 	}
 
 	things := make([]*model.UoloThing, 0)

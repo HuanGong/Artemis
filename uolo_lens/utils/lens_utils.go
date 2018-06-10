@@ -7,10 +7,12 @@ import (
 
 func IsUserLogin(ec echo.Context) (string, bool) {
 	jwtToken := ec.Get("user")
+
 	if jwtToken == nil {
 		return "", false
 	}
 	oldClaims := jwtToken.(*jwt.Token).Claims.(jwt.MapClaims)
-	userId := (oldClaims["id"]).(string)
-	return userId, len(userId) != 0
+	userId, _ := oldClaims["id"]
+	id := userId.(string)
+	return id, len(id) != 0
 }

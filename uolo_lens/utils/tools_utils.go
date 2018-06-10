@@ -35,7 +35,7 @@ func GetCityByIp(ip string) string {
 	if err := json.Unmarshal(body, r); err != nil {
 		return "北京"
 	}
-	if r.Code != 0 {
+	if r.Code != 0 || r.Data.City == "" {
 		return "北京"
 	}
 

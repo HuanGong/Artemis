@@ -3,24 +3,22 @@ package uolo_lens
 import (
 	"artemis/uolo_lens/recommendation"
 	"encoding/json"
-	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-redis/redis"
 	"github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
-	"github.com/importcjj/trie-go"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 var (
 	LensConfig     Config
 	Orm            *xorm.Engine
-	JwtBlockPath   *trie.Trie               = trie.New()
-	RedisClientMap map[string]*redis.Client = make(map[string]*redis.Client)
+	RedisClientMap = make(map[string]*redis.Client)
 	Recommender    *recommendation.RecommendImpl
 )
 
@@ -70,6 +68,7 @@ func (impl *UoloLens) HttpServerName() string {
 
 func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 
+	ec.Use(middleware.CSRF())
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS},
@@ -80,38 +79,27 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 		Claims:     jwt.MapClaims{},
 		Skipper:    impl.JwtSkipperChecker,
 	}))
-	ec.HTTPErrorHandler = func(err error, ec echo.Context) {
-		logrus.Debugln(fmt.Sprintf("Request %s from ip %s occur error %s", ec.Path(), ec.RealIP(), err.Error()))
-	}
 
-	ec.GET("/lenslist", impl.lensHandler.LensList) // public
+	// public
+	ec.GET("/p/lenslist", impl.lensHandler.LensList)
+	ec.GET("/p/article/detail", impl.postHandler.ArticleDetail)
+	ec.GET("/p/tools/weather/query", impl.toolsHandler.QueryWeather)
+	ec.GET("/p/tools/extract/article", impl.postHandler.DialysisConent)
+	ec.GET("/p/things/v1/public/list", impl.thingsHandler.GetPublicThingsList)
 
-	utilsGr := ec.Group("/tools") // public
-	utilsGr.GET("/weather/query", impl.toolsHandler.QueryWeather)
-	utilsGr.GET("/extract/article", impl.postHandler.DialysisConent)
-
-	ArticleGr := ec.Group("/article")
-	ArticleGr.POST("/new", impl.postHandler.ArticleNew)
-	ArticleGr.POST("/mod", impl.postHandler.ArticleMod)
-	ArticleGr.GET("/detail", impl.postHandler.ArticleDetail)
-	ArticleGr.GET("/auto/publish", impl.postHandler.AutoPublish)
-
-	// JWT Auth Needed Path
-	JwtBlockPath.Put("/article/new", true)
-	JwtBlockPath.Put("/article/mod", true)
-	JwtBlockPath.Put("/article/auto/publish", true)
+	//private
+	ec.GET("/lenslist", impl.lensHandler.LensList)
+	//ec.POST("/article/new", impl.postHandler.ArticleNew)
+	//ec.POST("/article/mod", impl.postHandler.ArticleMod)
+	//ec.POST("/article/reproduce", impl.postHandler.ArticleNew)
+	ec.POST("/article/auto/publish", impl.postHandler.AutoPublish)
 
 	ThingsGr := ec.Group("/things/v1")
-	ThingsGr.GET("/list/todo", impl.thingsHandler.GetThingsList)         //public
-	ThingsGr.GET("/list/finished", impl.thingsHandler.GetDoneThingsList) //public
-
-	ThingsGr.POST("/new", impl.thingsHandler.NewThings)
-	ThingsGr.POST("/delete", impl.thingsHandler.DeleteUoloThing)
+	//ThingsGr.POST("/new", impl.thingsHandler.NewThings)
+	//ThingsGr.POST("/delete", impl.thingsHandler.DeleteUoloThing)
 	ThingsGr.POST("/finish", impl.thingsHandler.MarkUoloThingFinish)
-
-	JwtBlockPath.Put("/things/v1/new", true)
-	JwtBlockPath.Put("/things/v1/finish", true)
-	JwtBlockPath.Put("/things/v1/delete", true)
+	ThingsGr.GET("/list/todo", impl.thingsHandler.GetThingsList)
+	ThingsGr.GET("/list/finished", impl.thingsHandler.GetDoneThingsList)
 
 	return nil
 }
@@ -190,11 +178,10 @@ func (impl *UoloLens) RedisClient(name string) *redis.Client {
 
 func (impl *UoloLens) JwtSkipperChecker(ec echo.Context) bool {
 	path := ec.Path()
-	logrus.Debugln("request Path", path)
-	if ok, result := JwtBlockPath.Match(path); ok && result.Value.(bool) == true {
-		return false
+
+	if strings.HasPrefix(path, "/p/") {
+		return true
 	}
 
-	logrus.Debugln("request Path JwtBlock Trie Not Match")
-	return true
+	return false
 }

@@ -20,5 +20,6 @@ type (
 		MysqlConfig   MysqlConfig
 		PostDataDir   string
 		RedisConfig   []RedisConfig
+		CleanMarkPath string
 	}
 )

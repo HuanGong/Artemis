@@ -1,15 +1,14 @@
 package echo_face
 
 import (
-	"github.com/kelvins/lbph/metric"
-	"github.com/sirupsen/logrus"
-	"github.com/labstack/echo"
+	"fmt"
 	"github.com/kelvins/lbph"
+	"github.com/kelvins/lbph/metric"
+	"github.com/labstack/echo"
+	"github.com/sirupsen/logrus"
 	"image"
 	"os"
-	"fmt"
 )
-
 
 type (
 	EchoFace struct {
@@ -18,15 +17,13 @@ type (
 
 func NewEchoFace() *EchoFace {
 	logrus.SetLevel(logrus.DebugLevel)
-	return &EchoFace{
-
-	}
+	return &EchoFace{}
 }
 
 func (impl *EchoFace) BeforeCliRun() error {
 	logrus.Debugln("EchoFace.BeforeCliRun Enter ")
 
-	FaceData := []string {
+	FaceData := []string{
 		"gonghuan.png",
 		"fxx.png",
 		"cwj.png",
@@ -68,10 +65,10 @@ func (impl *EchoFace) HttpServerName() string {
 	return "EchoFace"
 }
 
-func (impl *EchoFace) OnServerInitialized(ec *echo.Echo) error {
+func (impl *EchoFace) OnHttpServerInitialized(ec *echo.Echo) error {
 	logrus.Debugln("Server Initialize Enter")
 
-	ec.GET("/test", func (ec echo.Context) error {
+	ec.GET("/test", func(ec echo.Context) error {
 
 		logrus.Debugln("Handle Test Request Start Load Image")
 		lbph.Metric = metric.EuclideanDistance
@@ -86,7 +83,7 @@ func (impl *EchoFace) OnServerInitialized(ec *echo.Echo) error {
 
 		label, distance, err := lbph.Predict(img)
 		if err != nil {
-		    logrus.Debugln("Lable:", label, " Distance:", distance, " Error:", err.Error())
+			logrus.Debugln("Lable:", label, " Distance:", distance, " Error:", err.Error())
 		}
 		result := fmt.Sprintf("Lable:%s Distance:%f", label, distance)
 
@@ -111,7 +108,6 @@ func (impl *EchoFace) RunTest() {
 	}
 	logrus.Debugf("Lable:%s Distance:%f", label, distance)
 
-
 	img, err = loadImage("sgh.png")
 	if err != nil {
 		logrus.Debugln("Load Image sfxx.png Failed", err.Error())
@@ -125,7 +121,6 @@ func (impl *EchoFace) RunTest() {
 
 	return
 }
-
 
 func loadImage(filePath string) (image.Image, error) {
 	fImage, err := os.Open(filePath)
@@ -149,4 +144,3 @@ func checkError(err error) {
 func LoadTrainModel() {
 
 }
-

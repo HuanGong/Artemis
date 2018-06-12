@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/urfave/cli.v2"
+	"net"
 	"net/http"
 	"os"
 	"sync"
@@ -27,12 +29,13 @@ type (
 	HttpServerContent interface {
 		Endpoint() string
 		HttpServerName() string
-		OnServerInitialized(echo *echo.Echo) error
+		OnHttpServerInitialized(echo *echo.Echo) error
 	}
 
 	StartFlow struct {
-		runType FlowRunType
-		runFlow func() error
+		Name    string
+		RunType FlowRunType
+		Start   func() error
 	}
 
 	App struct {
@@ -53,24 +56,52 @@ func NewApp(c AppContent) *App {
 	return app
 }
 
+func (app *App) WithPrometheusMetrics() *App {
+	flow := &StartFlow{
+		Name:    "Prometheus Metrics",
+		RunType: kRunTypeAsync,
+		Start: func() error {
+			listener, err := net.Listen("tcp", "0.0.0.0:3009")
+			if err != nil {
+				return errors.Wrapf(err, "RunPrometheusMatrix listen failed")
+			}
+
+			//grpc_prometheus.EnableHandlingTimeHistogram()
+
+			log.Info("=============================================")
+			log.Infof("=== Prometheus Metrics start on %s ===", listener.Addr())
+			log.Info("=============================================")
+
+			http.Handle("/metrics", promhttp.Handler())
+			panic(http.Serve(listener, nil))
+
+			return nil
+		},
+	}
+
+	app.startFlow = append(app.startFlow, flow)
+	return app
+}
+
 func (app *App) WithHttpServer(content HttpServerContent) *App {
 	flow := &StartFlow{
-		runType: kRunTypeAsync,
-		runFlow: func() error {
+		Name:    "HttpServer",
+		RunType: kRunTypeAsync,
+		Start: func() error {
 			e := echo.New()
 			e.HideBanner = true
-			//e.Binder = &binder.PbRequestBinder{}
 
-			//e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-			//AllowOrigins: []string{"*"},
-			//AllowMethods: []string{echo.GET, echo.POST, echo.OPTIONS, echo.DELETE, echo.HEAD},
-			//}))
 			e.HTTPErrorHandler = HttpErrorHandler
-			if err := content.OnServerInitialized(e); err != nil {
-				log.Errorf("App Run WithHttpServer %s Failed With Error %s\n", content.HttpServerName(), err.Error())
+
+			if err := content.OnHttpServerInitialized(e); err != nil {
+				log.Errorf("Start HttpServer %s Failed With Error %s\n", content.HttpServerName(), err.Error())
 				return errors.Wrap(err, "Start HttpServer Failed")
 			}
-			return e.Start(content.Endpoint())
+			if err := e.Start(content.Endpoint()); err != nil {
+				log.Infoln("http server end with error:", err.Error())
+			}
+
+			return nil
 		},
 	}
 
@@ -80,8 +111,8 @@ func (app *App) WithHttpServer(content HttpServerContent) *App {
 
 func (app *App) WithCommonFlow(fun func() error, flowRunType FlowRunType) {
 	flow := &StartFlow{
-		runType: flowRunType,
-		runFlow: fun,
+		RunType: flowRunType,
+		Start:   fun,
 	}
 	app.startFlow = append(app.startFlow, flow)
 }
@@ -94,31 +125,30 @@ func (app *App) CliAction(ctx *cli.Context) error {
 		app.content.OnCliApplicationRun()
 	}
 
-	log.Infoln("start run start flow function")
+	log.Infoln("start run start flows:", len(app.startFlow))
 
 	wg := sync.WaitGroup{}
 	wg.Add(1) //avoid empty wg.wait
 	for _, flow := range app.startFlow {
-		if flow.runType == kRunTypeAsync {
+		log.Infoln("Run Flow ", flow.Name)
+		switch {
+		case flow.RunType == kRunTypeAsync:
 			wg.Add(1)
-			go func() {
-				if err := flow.runFlow(); err != nil {
-					log.Panicln("Start async Flow Failed", err.Error())
+			go func(startFlow *StartFlow) {
+				if err := startFlow.Start(); err != nil {
+					log.Panicln("Start sync Flow Failed", err.Error())
 				}
 				wg.Done()
-			}()
-		} else {
-			wg.Add(1)
-			if err := flow.runFlow(); err != nil {
-				log.Panicln("Start sync Flow Failed", err.Error())
+			}(flow)
+		case flow.RunType == kRunTypeSync:
+			if err := flow.Start(); err != nil {
+				log.Panicln("Start async Flow Failed", err.Error())
 			}
-			wg.Done()
 		}
 	}
 	wg.Done()
 	wg.Wait()
 
-	log.Infoln("all start flow done!")
 	return nil
 }
 

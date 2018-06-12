@@ -2,7 +2,7 @@ LogLevel = "DEBUG"
 ServerAddress = "127.0.0.1:3006"
 JWTSecretkey = "TestIv8^vow%Jf4gPfppyt*q"
 PostDataDir = "./data/"
-CleanMarkPath = ""
+CleanMarkPath = "tools/clean-mark/bin/clean-mark"
 
 [MysqlConfig]
 User = "root"

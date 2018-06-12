@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"
@@ -15,7 +14,7 @@ import (
 )
 
 var (
-	CleanMarkPath = "tools/clean-mark/bin/clean-mark"
+	CleanMarkPath = "clean-mark"
 )
 
 func SaveArticleAsFileSync(fullPath, content string) error {
@@ -27,72 +26,6 @@ func SaveArticleAsFileSync(fullPath, content string) error {
 		}
 	}
 	return ioutil.WriteFile(fullPath, []byte(content), 0644)
-}
-
-func ExtractArticleFromUrl(url string) (map[string]string, error) {
-
-	result := make(map[string]string)
-	if len(url) == 0 {
-		return result, errors.New("Url Not Correct")
-	}
-
-	cmd := exec.Command(CleanMarkPath, url)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-
-	if err := cmd.Run(); err != nil {
-		return result, errors.Wrapf(err, "cmd execute error")
-	}
-	const SFindStart = 0
-	const SFindHeader = 1
-	const SFindContent = 2
-
-	metaStart := false
-	for {
-		line, err := out.ReadString('\n')
-		if err != nil || io.EOF == err {
-			logrus.Errorln("content:", out.String())
-			return result, errors.Wrapf(err, "cmd not get content")
-			break
-		}
-
-		if line == "---\n" {
-			metaStart = !metaStart
-			if metaStart == false {
-				break
-			}
-			continue
-		}
-
-		if false == metaStart {
-			continue
-		}
-		Infos := strings.Split(line, ":")
-		if len(Infos) < 2 {
-			continue
-		}
-		switch Infos[0] {
-		case "link":
-			result["link"] = strings.Join(Infos[1:], ":")
-		case "title":
-			result["title"] = strings.Join(Infos[1:], ":")
-		case "description":
-			result["desc"] = strings.Join(Infos[1:], ":")
-		case "keywords":
-			result["keywords"] = strings.Join(Infos[1:], ":")
-		case "author":
-			result["author"] = strings.Join(Infos[1:], ":")
-		case "date":
-			result["date"] = strings.Join(Infos[1:], ":")
-		case "publisher":
-			result["publisher"] = strings.Join(Infos[1:], ":")
-		default:
-			continue
-		}
-	}
-	result["content"] = out.String()
-
-	return result, nil
 }
 
 func ExtractArticle(url string) (map[string]string, error) {

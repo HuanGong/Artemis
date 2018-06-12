@@ -57,7 +57,7 @@ func (impl *UoloCenter) HttpServerName() string {
 	return "UoloCenter"
 }
 
-func (impl *UoloCenter) OnServerInitialized(ec *echo.Echo) error {
+func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},

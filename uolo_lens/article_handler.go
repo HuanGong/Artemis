@@ -27,8 +27,8 @@ type (
 func (handler *PostHandler) ArticleDetail(ec echo.Context) error {
 	type (
 		PostContentForm struct {
-			Path string `json:"path" query:"path" form:"path"`
-			Type string `json:"type" query:"type" form:"type"`
+			Path string `json:"path" query:"path" binding:"required" form:"path"`
+			Type string `json:"type" query:"type" binding:"required" form:"type"`
 		}
 		Response struct {
 			Code    int32  `json:"code"`
@@ -39,7 +39,7 @@ func (handler *PostHandler) ArticleDetail(ec echo.Context) error {
 
 	form := &PostContentForm{}
 
-	if err := ec.Bind(form); err != nil || len(form.Type) == 0 {
+	if err := ec.Bind(form); err != nil {
 		return ec.JSON(http.StatusOK, Response{
 			Code:    -1,
 			Message: "参数错误",
@@ -199,7 +199,7 @@ func (handler *PostHandler) DialysisConent(ec echo.Context) error {
 		return ec.JSON(http.StatusOK, res)
 	}
 
-	result, err := utils.ExtractArticleFromUrl(in.Url)
+	result, err := utils.ExtractArticle(in.Url)
 	if err != nil {
 		logrus.Errorln("Extract Error:", err.Error())
 		res.Message = "解析错误"

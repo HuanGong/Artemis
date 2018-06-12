@@ -2,6 +2,7 @@ package uolo_lens
 
 import (
 	"artemis/uolo_lens/recommendation"
+	"artemis/uolo_lens/utils"
 	"encoding/json"
 	"github.com/BurntSushi/toml"
 	"github.com/dgrijalva/jwt-go"
@@ -66,9 +67,9 @@ func (impl *UoloLens) HttpServerName() string {
 	return "UoloLens"
 }
 
-func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
+func (impl *UoloLens) OnHttpServerInitialized(ec *echo.Echo) error {
 
-	ec.Use(middleware.CSRF())
+	//ec.Use(middleware.CSRF())
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
 		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS},
@@ -83,6 +84,7 @@ func (impl *UoloLens) OnServerInitialized(ec *echo.Echo) error {
 	// public
 	ec.GET("/p/lenslist", impl.lensHandler.LensList)
 	ec.GET("/p/article/detail", impl.postHandler.ArticleDetail)
+	ec.POST("/p/article/detail", impl.postHandler.ArticleDetail)
 	ec.GET("/p/tools/weather/query", impl.toolsHandler.QueryWeather)
 	ec.GET("/p/tools/extract/article", impl.postHandler.DialysisConent)
 	ec.GET("/p/things/v1/public/list", impl.thingsHandler.GetPublicThingsList)
@@ -113,6 +115,9 @@ func loadConfig() {
 	level, err := logrus.ParseLevel(LensConfig.LogLevel)
 	if err != nil {
 		logrus.SetLevel(logrus.DebugLevel)
+	}
+	if LensConfig.CleanMarkPath != "" {
+		utils.CleanMarkPath = LensConfig.CleanMarkPath
 	}
 	logrus.SetLevel(level)
 }

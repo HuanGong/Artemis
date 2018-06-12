@@ -1,14 +1,14 @@
 package statisticians
 
 import (
-	"github.com/labstack/echo"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/labstack/echo/middleware"
-	"strings"
-	"github.com/BurntSushi/toml"
-	"github.com/sirupsen/logrus"
 	"encoding/json"
+	"github.com/BurntSushi/toml"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/go-redis/redis"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 var Conf Config = Config{}
@@ -24,8 +24,8 @@ func NewStatistician() *Statistician {
 
 	loadConfig()
 	redisOption := &redis.Options{
-		Addr: "127.0.0.1:6379",
-		DB:   1,
+		Addr:       "127.0.0.1:6379",
+		DB:         1,
 		MaxRetries: 0,
 	}
 	redisClient = redis.NewClient(redisOption)
@@ -67,11 +67,11 @@ func (impl *Statistician) HttpServerName() string {
 	return "Statistician"
 }
 
-func (impl *Statistician) OnServerInitialized(ec *echo.Echo) error {
+func (impl *Statistician) OnHttpServerInitialized(ec *echo.Echo) error {
 
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
 		SigningKey: []byte(Conf.JWTSecretkey),
-		Claims:  jwt.MapClaims{},
+		Claims:     jwt.MapClaims{},
 		Skipper: func(c echo.Context) bool {
 			return !strings.HasPrefix(c.Path(), "/pri")
 		},
@@ -85,5 +85,3 @@ func (impl *Statistician) OnServerInitialized(ec *echo.Echo) error {
 
 	return nil
 }
-
-

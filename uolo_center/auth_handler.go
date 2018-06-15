@@ -17,6 +17,7 @@ const (
 	ErrFailedEncryptPsd  = -3
 	ErrUserAreadyExsist  = -4
 	ErrIncorrectPassword = -5
+	ErrEmailFormatError  = -6
 	TokenMaxAge          = time.Hour * 2
 )
 
@@ -24,14 +25,14 @@ type (
 	Handler struct {
 	}
 	DefaultRes struct {
-		Code    int    		`json:"code"`
-		Token   *TokenInfo	`json:"token"`
-		User    *model.User `json:"user"`
-		Message string 		`json:"message"`
+		Code    int                `json:"code"`
+		Message string             `json:"message"`
+		Token   *TokenInfo         `json:"token,omitempty"`
+		User    *model.UserProfile `json:"user,omitempty"`
 	}
 	TokenInfo struct {
-		Token 	string `json:"token"`
-		MaxAge  int32  `json:"max_age"`
+		Token  string `json:"token"`
+		MaxAge int32  `json:"max_age"`
 	}
 )
 
@@ -49,9 +50,9 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 	logrus.Infoln("SignUP enter")
 
 	type SignUpForm struct {
-		Name     string `form:"username" json:"username" binding:"required"`
-		Email    string `form:"email" json:email binding:"required"`
-		Password string `form:"password" json:"password" binding:"required"`
+		Name     string `form:"username" json:"username" binding:"required" query:"username"`
+		Password string `form:"password" json:"password" binding:"required" query:"password"`
+		Email    string `form:"email" json:"email" binding:"required" query:"email"`
 	}
 
 	form := &SignUpForm{}
@@ -59,29 +60,41 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 		logrus.Infof("Request Arguments Error When Bind")
 		return &echo.HTTPError{Code: http.StatusBadRequest, Message: "Invailed Request Arguments"}
 	}
-
 	logrus.Infoln("SignUP data:", form)
-	if form.Password == "" || form.Name == "" || form.Email == "" {
-		return &echo.HTTPError{Code: http.StatusBadRequest, Message: "Email or Password Error"}
+	if !model.CheckEmail(form.Email) {
+		return AbortWithError(ec, ErrEmailFormatError, "email格式错误")
 	}
+	if len(form.Password) < 6 {
+		return AbortWithError(ec, ErrIncorrectPassword, "密码长度不够")
+	}
+	if len(form.Name) < 1 {
+		return &echo.HTTPError{Code: ErrInvalidArguments, Message: "用户名非法"}
+	}
+	tNow := time.Now()
 
-	user := &model.User{}
-	found, err := orm.Where("username = ?", form.Name).Get(user)
+	user := &model.UserProfile{
+		Name:     form.Name,
+		Email:    form.Email,
+		NickName: form.Name,
+		AvastIco: form.Name, //TODO： gen avastinco path
+		Sex:      1,
+		Tags:     0,
+		Status:   0,
+		Birth:    tNow,
+	}
+	found, err := orm.Where("username = ?", form.Name).Get(&model.UserProfile{})
 	if err != nil {
-		logrus.Errorln("db error:", err.Error())
 		return AbortWithError(ec, ErrBadDatabaseQuery, "数据查询失败")
 	}
 	if found {
-		logrus.Errorln("user exsist,", user)
 		return AbortWithError(ec, ErrUserAreadyExsist, "用户已存在")
 	}
 
 	uuidGen, _ := uuid.NewV4()
 	user.Id = uuidGen.String()
-	user.Email = form.Email
-	user.Name = form.Name
+
 	if digest, err := bcrypt.GenerateFromPassword([]byte(form.Password), bcrypt.DefaultCost); err != nil {
-		return AbortWithError(ec, ErrFailedEncryptPsd, "加密密码失败")
+		return AbortWithError(ec, ErrFailedEncryptPsd, "签发密码失败")
 	} else {
 		user.Password = string(digest)
 	}
@@ -90,13 +103,14 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 
 	_, err = orm.Insert(user)
 	if err != nil {
+		logrus.Errorln("Create UserProfile Failed With error:", err.Error())
 		return AbortWithError(ec, ErrBadDatabaseQuery, "新建用户失败")
 	}
 
-	user.Password = "********"
+	user.Password = ""
 
 	return ec.JSON(http.StatusOK, DefaultRes{
-		Code: 0,
+		Code:    0,
 		User:    user,
 		Message: "注册成功",
 	})
@@ -105,8 +119,8 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 func (handler *Handler) Login(ec echo.Context) error {
 	logrus.Debugln("Handler.Login Enter")
 	type LoginForm struct {
-    Name     string `form:"username" json:"username" binding:"required" query:"username"`
-    Password string `form:"password" json:"password" binding:"required" query:"password"`
+		Name     string `form:"username" json:"username" binding:"required" query:"username"`
+		Password string `form:"password" json:"password" binding:"required" query:"password"`
 	}
 
 	form := &LoginForm{}
@@ -152,10 +166,10 @@ func (handler *Handler) Login(ec echo.Context) error {
 
 	logrus.Debugln("Handler.Login Leave Success")
 	return ec.JSON(http.StatusOK, DefaultRes{
-		Code:   0,
-		User:   u,
-		Token:  &TokenInfo{
-			Token: tokenString,
+		Code: 0,
+		//User: u,
+		Token: &TokenInfo{
+			Token:  tokenString,
 			MaxAge: 2,
 		},
 		Message: "Success",
@@ -192,11 +206,11 @@ func (handler *Handler) AuthRefresh(ec echo.Context) error {
 	ec.SetCookie(uidCookie)
 
 	return ec.JSON(http.StatusOK, DefaultRes{
-		Code: 0,
-		Message:"Success",
+		Code:    0,
+		Message: "Success",
 		Token: &TokenInfo{
 			MaxAge: 2,
-			Token: tokenString,
+			Token:  tokenString,
 		},
 	})
 }
@@ -218,7 +232,7 @@ func (handler *Handler) AuthTest(ec echo.Context) error {
 	logrus.Debugf("Handler.AutoTest Leave For UserUUID:%s", userUUID.(string))
 
 	return ec.JSON(http.StatusOK, DefaultRes{
-		Code: 0,
+		Code:    0,
 		Message: "Wellcome!, " + userUUID.(string),
 	})
 }
@@ -272,7 +286,7 @@ func (handler *Handler) ResetPassword(ec echo.Context) error {
 	}
 
 	return ec.JSON(http.StatusOK, DefaultRes{
-		Code: 0,
+		Code:    0,
 		Message: "修改成功",
 	})
 }

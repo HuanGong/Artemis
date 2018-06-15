@@ -4,6 +4,7 @@ import (
 	"artemis/uolo_lens/recommendation"
 	"artemis/uolo_lens/utils"
 	"encoding/json"
+	"flag"
 	"github.com/BurntSushi/toml"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-redis/redis"
@@ -12,8 +13,12 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"math"
+	"math/rand"
 	"strings"
+	"time"
 )
 
 var (
@@ -21,6 +26,28 @@ var (
 	Orm            *xorm.Engine
 	RedisClientMap = make(map[string]*redis.Client)
 	Recommender    *recommendation.RecommendImpl
+)
+
+var (
+	uniformDomain     = flag.Float64("uniform.domain", 0.0002, "The domain for the uniform distribution.")
+	normDomain        = flag.Float64("normal.domain", 0.0002, "The domain for the normal distribution.")
+	normMean          = flag.Float64("normal.mean", 0.00001, "The mean for the normal distribution.")
+	oscillationPeriod = flag.Duration("oscillation-period", 10*time.Minute, "The duration of the rate oscillation period.")
+
+	rpcDurations = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name:       "rpc_durations_seconds",
+			Help:       "RPC latency distributions.",
+			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+		},
+		[]string{"service"},
+	)
+
+	rpcDurationsHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Name:    "rpc_durations_histogram_seconds",
+		Help:    "RPC latency distributions.",
+		Buckets: prometheus.LinearBuckets(*normMean-5**normDomain, .5**normDomain, 20),
+	})
 )
 
 type (
@@ -53,10 +80,45 @@ func NewUoloLens() *UoloLens {
 }
 
 func (impl *UoloLens) BeforeCliRun() error {
+	prometheus.MustRegister(rpcDurations)
+	prometheus.MustRegister(rpcDurationsHistogram)
 	return nil
 }
 
 func (impl *UoloLens) OnCliApplicationRun() error {
+	flag.Parse()
+
+	start := time.Now()
+	oscillationFactor := func() float64 {
+		return 2 + math.Sin(math.Sin(2*math.Pi*float64(time.Since(start))/float64(*oscillationPeriod)))
+	}
+
+	// Periodically record some sample latencies for the three services.
+	go func() {
+		for {
+			v := rand.Float64() * *uniformDomain
+			rpcDurations.WithLabelValues("uniform").Observe(v)
+			time.Sleep(time.Duration(100*oscillationFactor()) * time.Millisecond)
+		}
+	}()
+
+	go func() {
+		for {
+			v := (rand.NormFloat64() * *normDomain) + *normMean
+			rpcDurations.WithLabelValues("normal").Observe(v)
+			rpcDurationsHistogram.Observe(v)
+			time.Sleep(time.Duration(75*oscillationFactor()) * time.Millisecond)
+		}
+	}()
+
+	go func() {
+		for {
+			v := rand.ExpFloat64() / 1e6
+			rpcDurations.WithLabelValues("exponential").Observe(v)
+			time.Sleep(time.Duration(50*oscillationFactor()) * time.Millisecond)
+		}
+	}()
+
 	return nil
 }
 
@@ -84,7 +146,10 @@ func (impl *UoloLens) OnHttpServerInitialized(ec *echo.Echo) error {
 	// public
 	ec.GET("/p/lenslist", impl.lensHandler.LensList)
 	ec.GET("/p/article/detail", impl.postHandler.ArticleDetail)
+	ec.GET("/p/article/auto/publish", impl.postHandler.AutoPublish)
 	ec.POST("/p/article/detail", impl.postHandler.ArticleDetail)
+	ec.POST("p/article/auto/publish", impl.postHandler.AutoPublish)
+
 	ec.GET("/p/tools/weather/query", impl.toolsHandler.QueryWeather)
 	ec.GET("/p/tools/extract/article", impl.postHandler.DialysisConent)
 	ec.GET("/p/things/v1/public/list", impl.thingsHandler.GetPublicThingsList)

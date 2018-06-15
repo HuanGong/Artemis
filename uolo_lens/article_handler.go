@@ -235,11 +235,11 @@ func (handler *PostHandler) ArticleMod(ec echo.Context) error {
 func (handler *PostHandler) AutoPublish(ec echo.Context) error {
 	type (
 		In struct {
-			Url string `json:"url" query:"url" form:"url"`
+			Url string `json:"url" query:"url" binding:"required" form:"url"`
 		}
 		Res struct {
-			Code    int32
-			Message string
+			Code    int32  `json:"code"`
+			Message string `json:"message"`
 		}
 	)
 

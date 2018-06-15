@@ -23,7 +23,6 @@ type (
 	UoloCenter struct {
 		handler      *Handler
 		utilsHandler *UtilsHandler
-		WhiteList    map[string]bool
 	}
 )
 
@@ -32,7 +31,6 @@ func NewNotifier() *UoloCenter {
 	instance := &UoloCenter{
 		handler:      &Handler{},
 		utilsHandler: NewUtilsHandler(),
-		WhiteList:    make(map[string]bool),
 	}
 
 	loadConfig()
@@ -98,11 +96,11 @@ func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 
 	ec.GET("/cm", func(ec echo.Context) error {
 		uidCookie := &http.Cookie{
-			Name:     "UoloAU",
+			Name:     "_uuid",
 			Value:    "HuanGong",
 			HttpOnly: false,
 			Domain:   "",
-			MaxAge:   int(time.Hour * 2),
+			MaxAge:   int(time.Hour * 24 * 30),
 		}
 		ec.SetCookie(uidCookie)
 		return ec.String(200, "")

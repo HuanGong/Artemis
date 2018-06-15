@@ -41,7 +41,7 @@ func (impl *RecommendImpl) ReloadCommonRecommendations() error {
 		logrus.Errorln("OrmEngine Broken, CommonRecommendations Load Failed")
 		return errors.New("OrmEngine Broken")
 	}
-	err := DbEngine.Select("*").OrderBy("id").Desc("id").Limit(5).Find(&articles)
+	err := DbEngine.Select("*").OrderBy("id").Desc("id").Limit(20).Find(&articles)
 	if err != nil {
 		return errors.Wrapf(err, "mysql db query error")
 	}
@@ -83,7 +83,7 @@ func (impl *RecommendImpl) BuildRecommendationsForUser(usr string) error {
 		logrus.Errorln("OrmEngine Broken, CommonRecommendations Load Failed")
 		return errors.New("OrmEngine Broken")
 	}
-	err := DbEngine.Alias("tb").Select("*").Desc("id").Limit(5).Find(&articles)
+	err := DbEngine.Alias("tb").Select("*").Desc("id").Limit(20).Find(&articles)
 	if err != nil {
 		logrus.Errorln("mysql db query error:", err.Error())
 		return errors.Wrapf(err, "mysql db query error")
@@ -134,8 +134,8 @@ func (impl *RecommendImpl) GetLensRecommendation(context *RecommendContext) (*mo
 		err = nil
 		if impl.CommonRecommendation == nil {
 			err = impl.ReloadCommonRecommendations()
-			go impl.BuildRecommendationsForUser(context.UserId)
 		}
+		go impl.BuildRecommendationsForUser(context.UserId)
 		recommends = impl.CommonRecommendation
 	} else {
 		logrus.Debugln("Got Content From User:", key)

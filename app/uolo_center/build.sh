@@ -1,14 +1,12 @@
 #!/bin/bash
 
-if [ $# -ne 2 ]; then
-  echo "usage: $0 machine config"
+if [ $# -ne 1 ]; then
+  echo "usage: $0 machine"
   exit -1
 fi
 
 machine=$1
-configFile=$2
 
-#dataFile=$3
 servicePath=/data/deploy/uolo/center
 binFile=uolo_center_linux
 
@@ -23,8 +21,7 @@ ssh $machine "mkdir -p $servicePath;"
 scp ./$binFile    $machine:$servicePath/new
 #scp ./$configFile $machine:$servicePath/config.toml
 
-scp ./restart.sh $machine:$servicePath
-#scp -r ./$dataFile $machine:$servicePath
+#scp ./restart.sh $machine:$servicePath
 
 ssh $machine "cd $servicePath; pwd ; /bin/bash restart.sh"
 

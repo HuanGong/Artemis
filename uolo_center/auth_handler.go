@@ -2,6 +2,7 @@ package uolo_center
 
 import (
 	"artemis/uolo_center/model"
+	"artemis/uolo_center/utils"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/satori/go.uuid"
@@ -18,7 +19,7 @@ const (
 	ErrUserAlreadyExist  = -4
 	ErrIncorrectPassword = -5
 	ErrEmailFormatError  = -6
-	TokenMaxAge          = time.Hour * 2
+	TokenMaxAge          = time.Hour * 12
 )
 
 type (
@@ -131,13 +132,13 @@ func (handler *Handler) Login(ec echo.Context) error {
 	}
 
 	u := &model.UserProfile{}
-	found, err := orm.Where("username=?", form.Name).Get(u)
+	found, err := orm.Where("username = ?", form.Name).Get(u)
 	if err != nil {
-		return AbortWithError(ec, ErrBadDatabaseQuery, "DB Query Error")
+		return AbortWithError(ec, ErrBadDatabaseQuery, "数据库错误")
 	}
 
 	if found == false || bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(form.Password)) != nil {
-		return AbortWithError(ec, ErrIncorrectPassword, "Incorrect Username / Password")
+		return AbortWithError(ec, ErrIncorrectPassword, "用户名或密码错误")
 	}
 
 	expire := time.Now().Add(TokenMaxAge)
@@ -155,23 +156,16 @@ func (handler *Handler) Login(ec echo.Context) error {
 		return AbortWithError(ec, ErrFailedEncryptPsd, "Create Token faild")
 	}
 
-	u.Password = "********"
-	uidCookie := &http.Cookie{
-		Name:     "UoloAU",
-		Value:    tokenString,
-		HttpOnly: false,
-		Domain:   "",
-		MaxAge:   int(time.Hour * 2),
-	}
-	ec.SetCookie(uidCookie)
+	utils.SignCookieForUserId(ec, u.Id, TokenMaxAge)
+	utils.SignCookieForAuth(ec, tokenString, TokenMaxAge)
 
 	logrus.Debugln("Handler.Login Leave Success")
 	return ec.JSON(http.StatusOK, DefaultRes{
 		Code: 0,
-		//User: u,
+		User: u,
 		Token: &TokenInfo{
 			Token:  tokenString,
-			MaxAge: 2,
+			MaxAge: 12,
 		},
 		Message: "Success",
 	})
@@ -180,7 +174,9 @@ func (handler *Handler) Login(ec echo.Context) error {
 func (handler *Handler) AuthRefresh(ec echo.Context) error {
 
 	oldToken := ec.Get("user").(*jwt.Token)
-
+	if oldToken == nil {
+		return AbortWithError(ec, ErrFailedEncryptPsd, "获取token失败")
+	}
 	oldClaims := oldToken.Claims.(jwt.MapClaims)
 	oldId := oldClaims["id"]
 
@@ -193,24 +189,17 @@ func (handler *Handler) AuthRefresh(ec echo.Context) error {
 	claims["exp"] = expire.Unix()
 
 	tokenString, err := token.SignedString([]byte(conf.JWTSecretkey))
-
 	if err != nil {
 		return AbortWithError(ec, ErrFailedEncryptPsd, "签发token失败")
 	}
 
-	uidCookie := &http.Cookie{
-		Name:     "UoloAU",
-		Value:    tokenString,
-		HttpOnly: true,
-		MaxAge:   int(TokenMaxAge),
-	}
-	ec.SetCookie(uidCookie)
-
+	utils.SignCookieForAuth(ec, tokenString, TokenMaxAge)
+	utils.SignCookieForUserId(ec, oldId.(string), TokenMaxAge)
 	return ec.JSON(http.StatusOK, DefaultRes{
 		Code:    0,
 		Message: "Success",
 		Token: &TokenInfo{
-			MaxAge: 2,
+			MaxAge: 12,
 			Token:  tokenString,
 		},
 	})
@@ -256,22 +245,21 @@ func (handler *Handler) ResetPassword(ec echo.Context) error {
 		return AbortWithError(ec, ErrInvalidArguments, "Missing Required Arguments")
 	}
 
-	u := &model.User{}
+	u := &model.UserProfile{}
 	found, err := orm.Where("username = ?", form.Name).Get(u)
-	//select user from xxxx where username=xxxx
 	if err != nil {
 		return AbortWithError(ec, ErrBadDatabaseQuery, "数据库错误")
 	}
 
 	if found == false || bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(form.Old)) != nil {
-		return AbortWithError(ec, ErrIncorrectPassword, "密码错误")
+		return AbortWithError(ec, ErrIncorrectPassword, "用户名或密码错误")
 	}
 
 	if userId != u.Id { //防止获取到别人用户名和密码的情况下，冒用别人的token来修改别人的密码
 		return AbortWithError(ec, ErrIncorrectPassword, "ID不匹配")
 	}
 
-	if form.New != form.Confirm {
+	if form.New != form.Confirm || len(form.New) < 6 {
 		return AbortWithError(ec, ErrInvalidArguments, "密码不一致")
 	}
 
@@ -281,7 +269,7 @@ func (handler *Handler) ResetPassword(ec echo.Context) error {
 		u.Password = string(digest)
 	}
 
-	_, err = orm.Insert(u)
+	_, err = orm.Update(u)
 	if err != nil {
 		return AbortWithError(ec, ErrBadDatabaseQuery, "保存失败")
 	}

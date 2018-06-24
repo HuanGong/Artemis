@@ -16,7 +16,7 @@ const (
 	ErrInvalidArguments  = -1
 	ErrBadDatabaseQuery  = -2
 	ErrFailedEncryptPsd  = -3
-	ErrUserAreadyExsist  = -4
+	ErrUserAlreadyExist  = -4
 	ErrIncorrectPassword = -5
 	ErrEmailFormatError  = -6
 	TokenMaxAge          = time.Hour * 12
@@ -88,7 +88,7 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 		return AbortWithError(ec, ErrBadDatabaseQuery, "数据查询失败")
 	}
 	if found {
-		return AbortWithError(ec, ErrUserAreadyExsist, "用户已存在")
+		return AbortWithError(ec, ErrUserAlreadyExist, "用户已存在")
 	}
 
 	uuidGen, _ := uuid.NewV4()
@@ -119,6 +119,7 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 
 func (handler *Handler) Login(ec echo.Context) error {
 	logrus.Debugln("Handler.Login Enter")
+
 	type LoginForm struct {
 		Name     string `form:"username" json:"username" binding:"required" query:"username"`
 		Password string `form:"password" json:"password" binding:"required" query:"password"`
@@ -127,7 +128,7 @@ func (handler *Handler) Login(ec echo.Context) error {
 	form := &LoginForm{}
 
 	if err := ec.Bind(form); err != nil {
-		return AbortWithError(ec, ErrInvalidArguments, "Missing usename or password")
+		return AbortWithError(ec, ErrInvalidArguments, "Missing username or password")
 	}
 
 	u := &model.UserProfile{}

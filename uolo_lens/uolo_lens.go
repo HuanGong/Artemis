@@ -1,6 +1,7 @@
 package uolo_lens
 
 import (
+	AuUtils "artemis/uolo_center/utils"
 	"artemis/uolo_lens/recommendation"
 	"artemis/uolo_lens/utils"
 	"encoding/json"
@@ -132,9 +133,11 @@ func (impl *UoloLens) HttpServerName() string {
 func (impl *UoloLens) OnHttpServerInitialized(ec *echo.Echo) error {
 
 	//ec.Use(middleware.CSRF())
+
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS},
+		AllowOrigins:     []string{"https://www.echoface.cn", "https://api.echoface.cn", "https://blog.echoface.cn", "http://localhost:4200"},
+		AllowMethods:     []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS, echo.PUT},
+		AllowCredentials: true,
 	}))
 
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
@@ -143,13 +146,20 @@ func (impl *UoloLens) OnHttpServerInitialized(ec *echo.Echo) error {
 		Skipper:    impl.JwtSkipperChecker,
 	}))
 
+	ec.Use(AuUtils.ServeCookie)
+
 	// public
+
 	ec.GET("/p/lenslist", impl.lensHandler.LensList)
 	ec.GET("/p/article/detail", impl.postHandler.ArticleDetail)
 	ec.GET("/p/article/auto/publish", impl.postHandler.AutoPublish)
 	ec.POST("/p/article/detail", impl.postHandler.ArticleDetail)
 	ec.POST("p/article/auto/publish", impl.postHandler.AutoPublish)
 
+	ec.GET("/p/tools/cmtest", func(ec echo.Context) error {
+		cookies := ec.Cookies()
+		return ec.JSON(200, cookies)
+	})
 	ec.GET("/p/tools/weather/query", impl.toolsHandler.QueryWeather)
 	ec.GET("/p/tools/extract/article", impl.postHandler.DialysisConent)
 	ec.GET("/p/things/v1/public/list", impl.thingsHandler.GetPublicThingsList)

@@ -96,3 +96,16 @@ func TestThingsHandler_DeleteUoloThing(t *testing.T) {
 
 	fmt.Println("Body:", string(body))
 }
+
+func TestThingsHandler_GetOnlineThingsList(t *testing.T) {
+	apiUrl := "https://api.echoface.cn/lens/things/v1/list/todo"
+
+	res, err := http.Get(apiUrl)
+	if err != nil {
+		fmt.Println("Http Post Failed with err:", err.Error(), " Check Server Log For Detail")
+		t.Error(err.Error())
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	fmt.Println("Body:", string(body))
+}

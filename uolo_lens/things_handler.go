@@ -136,6 +136,8 @@ func (handler *ThingsHandler) GetThingsList(ec echo.Context) error {
 		})
 	}
 
+	logrus.Debugln("Get Todo Things For User:", userId)
+
 	things := make([]*model.UoloThing, 0)
 	err := Orm.Where("owner = ?", userId).And("archive_goal=?", false).Find(&things)
 	if err != nil {

@@ -1,6 +1,7 @@
 package uolo_center
 
 import (
+	"artemis/uolo_center/utils"
 	"encoding/json"
 	"github.com/BurntSushi/toml"
 	"github.com/dgrijalva/jwt-go"
@@ -9,28 +10,28 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/sirupsen/logrus"
-	"net/http"
 	"strings"
-	"time"
 )
 
 var (
-	conf Config
-	orm  *xorm.Engine
+	appConf   Config
+	ormEngine *xorm.Engine
 )
 
 type (
 	UoloCenter struct {
-		handler      *Handler
-		utilsHandler *UtilsHandler
+		authhandler    *Handler
+		profileHandler *ProfileHandler
+		utilsHandler   *UtilsHandler
 	}
 )
 
 func NewNotifier() *UoloCenter {
 
 	instance := &UoloCenter{
-		handler:      &Handler{},
-		utilsHandler: NewUtilsHandler(),
+		authhandler:    &Handler{},
+		utilsHandler:   NewUtilsHandler(),
+		profileHandler: NewProfileHandler(),
 	}
 
 	loadConfig()
@@ -49,7 +50,7 @@ func (impl *UoloCenter) OnCliApplicationRun() error {
 }
 
 func (impl *UoloCenter) Endpoint() string {
-	return conf.ServerAddress
+	return appConf.ServerAddress
 }
 func (impl *UoloCenter) HttpServerName() string {
 	return "UoloCenter"
@@ -58,12 +59,13 @@ func (impl *UoloCenter) HttpServerName() string {
 func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS},
+		AllowOrigins:     []string{"https://www.echoface.cn", "https://api.echoface.cn", "https://blog.echoface.cn", "http://localhost:4200"},
+		AllowMethods:     []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS, echo.PUT},
+		AllowCredentials: true,
 	}))
 
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey: []byte(conf.JWTSecretkey),
+		SigningKey: []byte(appConf.JWTSecretkey),
 		Claims:     jwt.MapClaims{},
 		Skipper: func(c echo.Context) bool {
 			path := c.Path()
@@ -81,44 +83,40 @@ func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 		},
 	}))
 
+	ec.Use(utils.ServeCookie)
+
+	impl.profileHandler.RegisterRouter(ec)
+
 	gr := ec.Group("/au") // Authorization relative
-	gr.POST("/signup", impl.handler.SignUp)
-	gr.POST("/login", impl.handler.Login)
-	gr.POST("/check", impl.handler.AuthTest)
-	gr.POST("/reauth", impl.handler.AuthRefresh)
-	gr.POST("/reset/passwd", impl.handler.ResetPassword)
+	gr.POST("/signup", impl.authhandler.SignUp)
+	gr.POST("/login", impl.authhandler.Login)
+	gr.POST("/check", impl.authhandler.AuthTest)
+	gr.POST("/reauth", impl.authhandler.AuthRefresh)
+	gr.POST("/reset/passwd", impl.authhandler.ResetPassword)
 
-	gr.GET("/signup", impl.handler.SignUp)
-	gr.GET("/login", impl.handler.Login)
-	gr.GET("/check", impl.handler.AuthTest)
-	gr.GET("/reauth", impl.handler.AuthRefresh)
-	gr.GET("/reset/passwd", impl.handler.ResetPassword)
-
-	ec.GET("/cm", func(ec echo.Context) error {
-		uidCookie := &http.Cookie{
-			Name:     "_uuid",
-			Value:    "HuanGong",
-			HttpOnly: false,
-			Domain:   "",
-			MaxAge:   int(time.Hour * 24 * 30),
-		}
-		ec.SetCookie(uidCookie)
-		return ec.String(200, "")
-	})
+	gr.GET("/signup", impl.authhandler.SignUp)
+	gr.GET("/login", impl.authhandler.Login)
+	gr.GET("/check", impl.authhandler.AuthTest)
+	gr.GET("/reauth", impl.authhandler.AuthRefresh)
+	gr.GET("/reset/passwd", impl.authhandler.ResetPassword)
 
 	utilsGr := ec.Group("/utils")
-	utilsGr.GET("/qrcode2", impl.utilsHandler.GenQrcode)
+	utilsGr.GET("/qrcode", impl.utilsHandler.GenQrcode)
+	utilsGr.GET("/cmtest", func(ec echo.Context) error {
+		cookies := ec.Cookies()
+		return ec.JSON(200, cookies)
+	})
 
 	return nil
 }
 
 func loadConfig() {
-	if _, err := toml.DecodeFile("config.toml", &conf); err != nil {
+	if _, err := toml.DecodeFile("config.toml", &appConf); err != nil {
 		logrus.Panicln(err.Error())
 	}
-	jc, _ := json.Marshal(&conf)
+	jc, _ := json.Marshal(&appConf)
 	logrus.Infoln("load config.toml", string(jc))
-	level, err := logrus.ParseLevel(conf.LogLevel)
+	level, err := logrus.ParseLevel(appConf.LogLevel)
 	if err != nil {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
@@ -128,11 +126,11 @@ func loadConfig() {
 func initDB() {
 
 	connectStr := &mysql.Config{
-		User:   conf.MysqlConfig.User,
-		Passwd: conf.MysqlConfig.Passwd,
+		User:   appConf.MysqlConfig.User,
+		Passwd: appConf.MysqlConfig.Passwd,
 		Net:    "tcp",
-		Addr:   conf.MysqlConfig.HostPort,
-		DBName: conf.MysqlConfig.DBName,
+		Addr:   appConf.MysqlConfig.HostPort,
+		DBName: appConf.MysqlConfig.DBName,
 		Params: map[string]string{
 			"charset": "utf8",
 		},
@@ -143,9 +141,9 @@ func initDB() {
 		logrus.Panic("DB connection initialization failed, ", err)
 	}
 
-	orm = db
+	ormEngine = db
 
-	if err := orm.Ping(); err != nil {
+	if err := ormEngine.Ping(); err != nil {
 		logrus.Errorln("Ping Mysql Failed, Please Check Your Connection Config")
 	}
 	return

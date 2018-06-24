@@ -83,7 +83,7 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 		Status:   0,
 		Birth:    tNow,
 	}
-	found, err := orm.Where("username = ?", form.Name).Get(&model.UserProfile{})
+	found, err := ormEngine.Where("username = ?", form.Name).Get(&model.UserProfile{})
 	if err != nil {
 		return AbortWithError(ec, ErrBadDatabaseQuery, "数据查询失败")
 	}
@@ -102,7 +102,7 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 
 	logrus.Infoln("Create New User:", user)
 
-	_, err = orm.Insert(user)
+	_, err = ormEngine.Insert(user)
 	if err != nil {
 		logrus.Errorln("Create UserProfile Failed With error:", err.Error())
 		return AbortWithError(ec, ErrBadDatabaseQuery, "新建用户失败")
@@ -131,7 +131,7 @@ func (handler *Handler) Login(ec echo.Context) error {
 	}
 
 	u := &model.UserProfile{}
-	found, err := orm.Where("username = ?", form.Name).Get(u)
+	found, err := ormEngine.Where("username = ?", form.Name).Get(u)
 	if err != nil {
 		return AbortWithError(ec, ErrBadDatabaseQuery, "数据库错误")
 	}
@@ -149,14 +149,13 @@ func (handler *Handler) Login(ec echo.Context) error {
 	claims["exp"] = expire.Unix()
 
 	// Sign and get the complete encoded token as a string
-	tokenString, err := token.SignedString([]byte(conf.JWTSecretkey))
+	tokenString, err := token.SignedString([]byte(appConf.JWTSecretkey))
 
 	if err != nil {
 		return AbortWithError(ec, ErrFailedEncryptPsd, "Create Token faild")
 	}
 
-	utils.SignCookieForUserId(ec, u.Id, TokenMaxAge)
-	utils.SignCookieForAuth(ec, tokenString, TokenMaxAge)
+	utils.SetUoloUserCookie(ec, u.Id)
 
 	logrus.Debugln("Handler.Login Leave Success")
 	return ec.JSON(http.StatusOK, DefaultRes{
@@ -187,13 +186,13 @@ func (handler *Handler) AuthRefresh(ec echo.Context) error {
 	claims["id"] = oldId
 	claims["exp"] = expire.Unix()
 
-	tokenString, err := token.SignedString([]byte(conf.JWTSecretkey))
+	tokenString, err := token.SignedString([]byte(appConf.JWTSecretkey))
 	if err != nil {
 		return AbortWithError(ec, ErrFailedEncryptPsd, "签发token失败")
 	}
 
-	utils.SignCookieForAuth(ec, tokenString, TokenMaxAge)
-	utils.SignCookieForUserId(ec, oldId.(string), TokenMaxAge)
+	utils.SetUoloUserCookie(ec, oldId.(string))
+
 	return ec.JSON(http.StatusOK, DefaultRes{
 		Code:    0,
 		Message: "Success",
@@ -245,7 +244,7 @@ func (handler *Handler) ResetPassword(ec echo.Context) error {
 	}
 
 	u := &model.UserProfile{}
-	found, err := orm.Where("username = ?", form.Name).Get(u)
+	found, err := ormEngine.Where("username = ?", form.Name).Get(u)
 	if err != nil {
 		return AbortWithError(ec, ErrBadDatabaseQuery, "数据库错误")
 	}
@@ -268,7 +267,7 @@ func (handler *Handler) ResetPassword(ec echo.Context) error {
 		u.Password = string(digest)
 	}
 
-	_, err = orm.Update(u)
+	_, err = ormEngine.Update(u)
 	if err != nil {
 		return AbortWithError(ec, ErrBadDatabaseQuery, "保存失败")
 	}

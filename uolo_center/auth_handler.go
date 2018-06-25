@@ -77,7 +77,7 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 		Name:     form.Name,
 		Email:    form.Email,
 		NickName: form.Name,
-		AvastIco: form.Name, //TODO： gen avastinco path
+		Avatar:   form.Name, //TODO： gen avastinco path
 		Sex:      1,
 		Tags:     0,
 		Status:   0,

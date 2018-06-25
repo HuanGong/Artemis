@@ -12,7 +12,7 @@ type (
 		Email    string    `xorm:"email" json:"email,omitempty" form:"email"`
 		Password string    `xorm:"password" json:"-" form:"password"`
 		NickName string    `xorm:"nickname" json:"nickname" form:"nickname"`
-		AvastIco string    `xorm:"avast" json:"avast" form:"avast"`
+		Avatar   string    `xorm:"avatar" json:"avatar" form:"avatar"`
 		Phone    string    `xorm:"phone" json:"phone" form:"phone"`
 		Sex      int32     `xorm:"sex" json:"sex" form:"sex"`
 		Birth    time.Time `xorm:"birth" json:"birth" form:"birth"`

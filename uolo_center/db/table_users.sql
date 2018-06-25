@@ -15,7 +15,7 @@ CREATE TABLE `user_profile` (
   `username` varchar(24) NOT NULL COMMENT '用户名',
   `password` varchar(64) NOT NULL COMMENT '密文密码',
   `nickname` varchar(24) NOT NULL COMMENT '昵称',
-  `avast` varchar(50) NOT NULL DEFAULT '' COMMENT '头像Id',
+  `avatar` varchar(50) NOT NULL DEFAULT '' COMMENT '头像Id',
   `phone` varchar(50) NOT NULL DEFAULT '' COMMENT '用户手机号',
   `email` varchar(50) NOT NULL COMMENT '用户邮箱',
   `sex` int(2) NOT NULL DEFAULT '0' COMMENT '性别：0未知 1男，2女',

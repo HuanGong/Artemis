@@ -1,15 +1,25 @@
 package uolo_center
 
 import (
+	"artemis/component/avatar_keeper"
 	"artemis/uolo_center/model"
+	"artemis/uolo_center/utils"
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
 
 type (
+	OptionConfig struct {
+		Path          string
+		DefaultAvatar string
+	}
+
 	ProfileHandler struct {
+		config OptionConfig
+		keeper *avatar_keeper.AvatarKeeper
 	}
 
 	ProfileResponse struct {
@@ -18,13 +28,20 @@ type (
 	}
 )
 
-func NewProfileHandler() *ProfileHandler {
-	return &ProfileHandler{}
+func NewProfileHandler(conf OptionConfig) *ProfileHandler {
+	keeper := avatar_keeper.NewAvatarKeeperWithFileStorage(conf.Path)
+	return &ProfileHandler{
+		config: conf,
+		keeper: keeper,
+	}
 }
 
 func (handler *ProfileHandler) RegisterRouter(ec *echo.Echo) {
 	// https://api.echoface.cn/user/profile/save
 	ec.POST("/user/profile/save", handler.SaveUserProfile)
+	ec.POST("/user/profile/avatar/upload", handler.UploadProfilePhone)
+	ec.GET("/user/profile/avatar", handler.GetProfilePhone)
+
 }
 
 func (handler *ProfileHandler) SaveUserProfile(e echo.Context) error {
@@ -87,4 +104,63 @@ func (handler *ProfileHandler) UpdateUserAvastImage(e echo.Context) error {
 		Code:    0,
 		Message: "success",
 	})
+}
+
+func (handler *ProfileHandler) UploadProfilePhone(ec echo.Context) error {
+
+	//name := ec.FormValue("name")
+	// Source
+	file, err := ec.FormFile("file")
+	if err != nil {
+		return err
+	}
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+	if _, err := ioutil.ReadAll(src); err != nil {
+		return err
+	} else {
+
+	}
+
+	return nil
+}
+
+func (handler *ProfileHandler) GetProfilePhone(ec echo.Context) error {
+	type (
+		In struct {
+			Standard string `query:"standard" form:"standard" binding:"required"`
+		}
+	)
+	userId, login := utils.IsUserLogin(ec)
+	if !login || len(userId) == 0 {
+		if defaultAvatar, err := ioutil.ReadFile(handler.config.DefaultAvatar); err == nil {
+			return ec.Blob(http.StatusOK, "image/png", defaultAvatar)
+		} else {
+			return echo.ErrNotFound
+		}
+	}
+	in := &In{}
+	if err := ec.Bind(in); err != nil {
+		return echo.ErrUnsupportedMediaType
+	}
+	level := avatar_keeper.KAvatarMiddle
+	switch in.Standard {
+	case "small":
+		level = avatar_keeper.KAvatarSmall
+	case "middle":
+		level = avatar_keeper.KAvatarMiddle
+	case "normal":
+		level = avatar_keeper.KAvatarNormal
+	default:
+		break
+	}
+	data, err := handler.keeper.GetSingleAvatar(userId, level)
+	if err != nil {
+		return echo.ErrNotFound
+	}
+
+	return ec.Blob(http.StatusOK, "image/png", data)
 }

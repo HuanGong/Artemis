@@ -21,6 +21,12 @@
 			"revisionTime": "2018-03-08T23:13:08Z"
 		},
 		{
+			"checksumSHA1": "MMjBzzaLztnmyjEs5WHZrCcJSo0=",
+			"path": "github.com/disintegration/imaging",
+			"revision": "5e63c9a565d0a3260d23d060a795783dab90fefe",
+			"revisionTime": "2018-06-03T08:52:56Z"
+		},
+		{
 			"checksumSHA1": "Mom4aDBDTlunU3+qc3QQP/r48OE=",
 			"path": "github.com/go-redis/redis",
 			"revision": "18b2e30835f248bffe475cb69c7267204de1bc1e",
@@ -201,6 +207,12 @@
 			"revisionTime": "2018-06-18T11:14:19Z"
 		},
 		{
+			"checksumSHA1": "jAzqolwnRJhHsKXmmvKNrHqxqAw=",
+			"path": "github.com/spaolacci/murmur3",
+			"revision": "f09979ecbc725b9e6d41a297405f65e7e8804acc",
+			"revisionTime": "2018-01-18T20:28:30Z"
+		},
+		{
 			"checksumSHA1": "LTOa3BADhwvT0wFCknPueQALm8I=",
 			"path": "github.com/valyala/bytebufferpool",
 			"revision": "e746df99fe4a3986f4d4f79e13c1e0117ce9c2f7",
@@ -235,6 +247,14 @@
 			"path": "golang.org/x/crypto/ssh/terminal",
 			"revision": "a49355c7e3f8fe157a85be2f77e6e269a0f89602",
 			"revisionTime": "2018-06-20T09:14:27Z"
+		},
+		{
+			"path": "golang.org/x/image/bmp",
+			"revision": ""
+		},
+		{
+			"path": "golang.org/x/image/tiff",
+			"revision": ""
 		},
 		{
 			"checksumSHA1": "USMsFbKZrNd1b9oRFbjevPr6PmI=",

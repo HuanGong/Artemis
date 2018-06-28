@@ -28,10 +28,14 @@ type (
 
 func NewNotifier() *UoloCenter {
 
+	conf := OptionConfig{
+		Path: "./profile/avatar",
+	}
+
 	instance := &UoloCenter{
 		authhandler:    &Handler{},
 		utilsHandler:   NewUtilsHandler(),
-		profileHandler: NewProfileHandler(),
+		profileHandler: NewProfileHandler(conf),
 	}
 
 	loadConfig()

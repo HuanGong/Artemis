@@ -26,7 +26,7 @@ type (
 	}
 )
 
-func NewNotifier() *UoloCenter {
+func NewUoloCenter() *UoloCenter {
 
 	conf := OptionConfig{
 		Path: "./profile/avatar",

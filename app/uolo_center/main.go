@@ -7,7 +7,7 @@ import (
 
 func main() {
 
-	notifier := uolo_center.NewNotifier()
+	notifier := uolo_center.NewUoloCenter()
 
 	app := uolo.NewApp(notifier)
 	app.WithHttpServer(notifier).

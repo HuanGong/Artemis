@@ -26,10 +26,15 @@ type (
 	}
 )
 
+func init() {
+	loadConfig()
+	initStorageDB()
+}
+
 func NewUoloCenter() *UoloCenter {
 
 	conf := OptionConfig{
-		Path: "./profile/avatar",
+		Path: appConf.ProfilePhotoDir,
 	}
 
 	instance := &UoloCenter{
@@ -37,10 +42,6 @@ func NewUoloCenter() *UoloCenter {
 		utilsHandler:   NewUtilsHandler(),
 		profileHandler: NewProfileHandler(conf),
 	}
-
-	loadConfig()
-
-	initDB()
 
 	return instance
 }
@@ -118,8 +119,8 @@ func loadConfig() {
 	if _, err := toml.DecodeFile("config.toml", &appConf); err != nil {
 		logrus.Panicln(err.Error())
 	}
-	jc, _ := json.Marshal(&appConf)
-	logrus.Infoln("load config.toml", string(jc))
+	jc, _ := json.MarshalIndent(&appConf, "", "  ")
+	logrus.Infoln("load config", string(jc))
 	level, err := logrus.ParseLevel(appConf.LogLevel)
 	if err != nil {
 		logrus.SetLevel(logrus.DebugLevel)
@@ -127,7 +128,7 @@ func loadConfig() {
 	logrus.SetLevel(level)
 }
 
-func initDB() {
+func initStorageDB() {
 
 	connectStr := &mysql.Config{
 		User:   appConf.MysqlConfig.User,

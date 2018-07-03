@@ -60,6 +60,14 @@ type (
 	}
 )
 
+func init() {
+	loadConfig()
+
+	initStorageDB()
+
+	initRedis(LensConfig.RedisConfig)
+}
+
 func NewUoloLens() *UoloLens {
 
 	instance := &UoloLens{
@@ -68,12 +76,6 @@ func NewUoloLens() *UoloLens {
 		toolsHandler:  &ToolsHandler{},
 		thingsHandler: &ThingsHandler{},
 	}
-
-	loadConfig()
-
-	initMysqlDB()
-
-	initRedis(LensConfig.RedisConfig)
 
 	Recommender = recommendation.NewRecommendImpl(instance)
 
@@ -185,8 +187,8 @@ func loadConfig() {
 	if _, err := toml.DecodeFile("config.toml", &LensConfig); err != nil {
 		logrus.Panicln(err.Error())
 	}
-	jc, _ := json.Marshal(&LensConfig)
-	logrus.Infoln("load config.toml", string(jc))
+	jc, _ := json.MarshalIndent(&LensConfig, "", "  ")
+	logrus.Infoln("load config", string(jc))
 	level, err := logrus.ParseLevel(LensConfig.LogLevel)
 	if err != nil {
 		logrus.SetLevel(logrus.DebugLevel)
@@ -197,7 +199,7 @@ func loadConfig() {
 	logrus.SetLevel(level)
 }
 
-func initMysqlDB() error {
+func initStorageDB() error {
 
 	connectStr := &mysql.Config{
 		User:   LensConfig.MysqlConfig.User,

@@ -1,6 +1,7 @@
 LogLevel = "DEBUG"
 ServerAddress = "127.0.0.1:3005"
 JWTSecretkey = "TestIv8^vow%Jf4gPfppyt*q"
+ProfilePhotoDir = "./profile/photo"
 
 [MysqlConfig]
 User = "root"

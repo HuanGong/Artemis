@@ -9,9 +9,10 @@ type (
 	}
 
 	Config struct {
-		LogLevel 		string
-		ServerAddress 	string
-		JWTSecretkey	string
-		MysqlConfig		MysqlConfig
+		LogLevel        string
+		ServerAddress   string
+		JWTSecretkey    string
+		ProfilePhotoDir string
+		MysqlConfig     MysqlConfig
 	}
 )

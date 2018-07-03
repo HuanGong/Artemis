@@ -87,7 +87,7 @@ func (keeper *AvatarKeeper) SaveNewProfilePhoto(key string, buf *bytes.Buffer) e
 	if err := png.Encode(smallBuf, small); err != nil {
 		return err
 	}
-	storageData.Middle = smallBuf.Bytes()
+	storageData.Small = smallBuf.Bytes()
 
 	return keeper.storage.Store(key, storageData)
 }

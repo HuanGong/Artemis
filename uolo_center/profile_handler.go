@@ -4,10 +4,13 @@ import (
 	"artemis/component/avatar_keeper"
 	"artemis/uolo_center/model"
 	"artemis/uolo_center/utils"
+	"bytes"
+	"encoding/base64"
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -39,8 +42,8 @@ func NewProfileHandler(conf OptionConfig) *ProfileHandler {
 func (handler *ProfileHandler) RegisterRouter(ec *echo.Echo) {
 	// https://api.echoface.cn/user/profile/save
 	ec.POST("/user/profile/save", handler.SaveUserProfile)
-	ec.POST("/user/profile/avatar/upload", handler.UploadProfilePhone)
-	ec.GET("/user/profile/avatar", handler.GetProfilePhone)
+	ec.POST("/user/profile/avatar/upload", handler.UploadProfilePhoto)
+	ec.GET("/user/profile/avatar", handler.GetProfilePhoto)
 
 }
 
@@ -106,29 +109,50 @@ func (handler *ProfileHandler) UpdateUserAvastImage(e echo.Context) error {
 	})
 }
 
-func (handler *ProfileHandler) UploadProfilePhone(ec echo.Context) error {
+func (handler *ProfileHandler) UploadProfilePhoto(ec echo.Context) error {
+	logrus.Debugln("UploadProfilePhoto Enter")
+	type (
+		In struct {
+			Id   string `json:"id" form:"id"`
+			Data string `json:"img" form:"img"`
+		}
+		Res struct {
+			Code    int32  `json:"code"`
+			Message string `json:"message"`
+		}
+	)
+	in := &In{}
+	res := &Res{}
+	if err := ec.Bind(in); err != nil {
+		logrus.Debugln("UploadProfilePhoto Bind Form Error")
+		res.Code = -1
+		res.Message = "参数错误"
+		return ec.JSON(http.StatusOK, res)
+	}
 
-	//name := ec.FormValue("name")
-	// Source
-	file, err := ec.FormFile("file")
+	in.Data = strings.Replace(in.Data, " ", "+", -1)
+	//logrus.Debugln("data:", in.Data)
+
+	rawData, err := base64.StdEncoding.DecodeString(in.Data)
 	if err != nil {
-		return err
+		res.Code = -2
+		res.Message = "解码失败"
+		return ec.JSON(http.StatusOK, res)
 	}
-	src, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-	if _, err := ioutil.ReadAll(src); err != nil {
-		return err
-	} else {
+	buf := bytes.NewBuffer(rawData)
 
+	if err := handler.keeper.SaveNewProfilePhoto(in.Id, buf); err != nil {
+		res.Code = -3
+		res.Message = "存储失败"
+		return ec.JSON(http.StatusOK, res)
 	}
 
-	return nil
+	res.Code = 0
+	res.Message = "OK"
+	return ec.JSON(http.StatusOK, res)
 }
 
-func (handler *ProfileHandler) GetProfilePhone(ec echo.Context) error {
+func (handler *ProfileHandler) GetProfilePhoto(ec echo.Context) error {
 	type (
 		In struct {
 			Standard string `query:"standard" form:"standard" binding:"required"`

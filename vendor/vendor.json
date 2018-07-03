@@ -57,6 +57,10 @@
 			"revisionTime": "2018-05-09T16:24:41Z"
 		},
 		{
+			"path": "github.com/golang/image/bmp",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "JZV+pLo8Z/kIYExrZr1Zu9KSKyU=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "9f81198da99b79e14d70ca2c3cc1bbe44c6e69b6",

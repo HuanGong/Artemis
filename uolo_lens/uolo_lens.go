@@ -20,6 +20,7 @@ import (
 	"math/rand"
 	"strings"
 	"time"
+	"net/http"
 )
 
 var (
@@ -137,7 +138,7 @@ func (impl *UoloLens) OnHttpServerInitialized(ec *echo.Echo) error {
 	//ec.Use(middleware.CSRF())
 
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{"https://www.echoface.cn", "https://api.echoface.cn", "https://blog.echoface.cn", "http://localhost:4200"},
+		AllowOrigins:     []string{"https://www.echoface.cn", "https://api.echoface.cn", "http://localhost:4200"},
 		AllowMethods:     []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS, echo.PUT},
 		AllowCredentials: true,
 	}))
@@ -149,6 +150,23 @@ func (impl *UoloLens) OnHttpServerInitialized(ec *echo.Echo) error {
 	}))
 
 	ec.Use(AuUtils.ServeCookie)
+
+	ec.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ec echo.Context) error {
+
+			for _, cookie := range ec.Cookies() {
+				logrus.Infof("got cookie %s : %s", cookie.Name, cookie.Value)
+			}
+
+			cookie := new(http.Cookie)
+			cookie.Name = "Name"
+			cookie.Value = "HuanGong"
+			cookie.Domain = ".echoface.cn"
+			cookie.Expires = time.Now().Add(24 * time.Hour)
+			ec.SetCookie(cookie)
+			return next(ec)
+		}
+	})
 
 	// public
 

@@ -60,5 +60,8 @@ func (handler *LensHandler) LensList(ec echo.Context) error {
 	res.LensList = &model.LensList{
 		Articles: articles,
 	}
+
+
+
 	return ec.JSON(http.StatusOK, res)
 }

@@ -1,7 +1,6 @@
 package uolo_center
 
 import (
-	"artemis/uolo_center/utils"
 	"encoding/json"
 	"github.com/BurntSushi/toml"
 	"github.com/dgrijalva/jwt-go"
@@ -64,14 +63,32 @@ func (impl *UoloCenter) HttpServerName() string {
 func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{"https://www.echoface.cn", "https://api.echoface.cn", "https://blog.echoface.cn", "http://localhost:4200"},
+		AllowOrigins: []string{
+			"https://www.echoface.cn",
+			"https://api.echoface.cn",
+			"https://blog.echoface.cn",
+			"http://localhost:4200",
+			"http://localhost:3005",
+		},
 		AllowMethods:     []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS, echo.PUT},
 		AllowCredentials: true,
 	}))
 
+	ec.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ec echo.Context) error {
+			logrus.Debugln("Cookie Viewer MiddleFunc >>>>>>>>>>>>>>>>>>>>>>> ")
+			for _, cookie := range ec.Cookies() {
+				logrus.Infof(" ===> %s : %s", cookie.Name, cookie.Value)
+			}
+			logrus.Debugln("Cookie Viewer MiddleFunc <<<<<<<<<<<<<<<<<<<<<<< ")
+			return next(ec)
+		}
+	})
+
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey: []byte(appConf.JWTSecretkey),
-		Claims:     jwt.MapClaims{},
+		SigningKey:  []byte(appConf.JWTSecretkey),
+		Claims:      jwt.MapClaims{},
+		TokenLookup: "cookie:_Authorization",
 		Skipper: func(c echo.Context) bool {
 			path := c.Path()
 
@@ -88,7 +105,7 @@ func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 		},
 	}))
 
-	ec.Use(utils.ServeCookie)
+	//ec.Use(utils.ServeCookie)
 
 	impl.profileHandler.RegisterRouter(ec)
 

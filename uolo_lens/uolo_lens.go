@@ -1,7 +1,6 @@
 package uolo_lens
 
 import (
-	AuUtils "artemis/uolo_center/utils"
 	"artemis/uolo_lens/recommendation"
 	"artemis/uolo_lens/utils"
 	"encoding/json"
@@ -20,7 +19,6 @@ import (
 	"math/rand"
 	"strings"
 	"time"
-	"net/http"
 )
 
 var (
@@ -138,32 +136,30 @@ func (impl *UoloLens) OnHttpServerInitialized(ec *echo.Echo) error {
 	//ec.Use(middleware.CSRF())
 
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     []string{"https://www.echoface.cn", "https://api.echoface.cn", "http://localhost:4200"},
+		AllowOrigins: []string{
+			"https://www.echoface.cn",
+			"https://blog.echoface.cn",
+			"https://api.echoface.cn",
+			"http://localhost:4200",
+		},
 		AllowMethods:     []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS, echo.PUT},
 		AllowCredentials: true,
 	}))
 
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
-		SigningKey: []byte(LensConfig.JWTSecretkey),
-		Claims:     jwt.MapClaims{},
-		Skipper:    impl.JwtSkipperChecker,
+		SigningKey:  []byte(LensConfig.JWTSecretkey),
+		Claims:      jwt.MapClaims{},
+		TokenLookup: "cookie:_Authorization",
+		Skipper:     impl.JwtSkipperChecker,
 	}))
-
-	ec.Use(AuUtils.ServeCookie)
 
 	ec.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ec echo.Context) error {
-
+			logrus.Debugln("Cookie Viewer MiddleFunc >>>>>>>>>>>>>>>>>>>>>>> ")
 			for _, cookie := range ec.Cookies() {
-				logrus.Infof("got cookie %s : %s", cookie.Name, cookie.Value)
+				logrus.Infof(" ===> %s : %s", cookie.Name, cookie.Value)
 			}
-
-			cookie := new(http.Cookie)
-			cookie.Name = "Name"
-			cookie.Value = "HuanGong"
-			cookie.Domain = ".echoface.cn"
-			cookie.Expires = time.Now().Add(24 * time.Hour)
-			ec.SetCookie(cookie)
+			logrus.Debugln("Cookie Viewer MiddleFunc <<<<<<<<<<<<<<<<<<<<<<< ")
 			return next(ec)
 		}
 	})

@@ -3,9 +3,8 @@ package statisticians
 import (
 	"github.com/labstack/echo"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"time"
 )
+
 type (
 	StatisticHandler struct {
 	}
@@ -23,16 +22,7 @@ func (handler *StatisticHandler) PVStatistic(ctx echo.Context) error {
 		logrus.Infoln("UID   :", cookie.Value)
 	}
 
-	uidCookie := &http.Cookie{
-		Name:   "uid",
-		Value:    "gonghuan",
-		HttpOnly: false,
-		MaxAge:   int(time.Hour * 24),
-	}
-
-	ctx.SetCookie(uidCookie)
 	ctx.String(200, "")
 
 	return nil
 }
-

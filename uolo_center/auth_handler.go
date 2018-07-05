@@ -156,7 +156,9 @@ func (handler *Handler) Login(ec echo.Context) error {
 		return AbortWithError(ec, ErrFailedEncryptPsd, "Create Token faild")
 	}
 
-	utils.SetUoloUserCookie(ec, u.Id)
+	jwtCookie := utils.GenHttpOnlyCookie("_Authorization", tokenString, ".echoface.cn", time.Hour*24)
+	ec.SetCookie(jwtCookie)
+	//utils.SetUoloUserCookie(ec, u.Id)
 
 	logrus.Debugln("Handler.Login Leave Success")
 	return ec.JSON(http.StatusOK, DefaultRes{
@@ -192,7 +194,9 @@ func (handler *Handler) AuthRefresh(ec echo.Context) error {
 		return AbortWithError(ec, ErrFailedEncryptPsd, "签发token失败")
 	}
 
-	utils.SetUoloUserCookie(ec, oldId.(string))
+	jwtCookie := utils.GenHttpOnlyCookie("_Authorization", tokenString, ".echoface.cn", time.Hour*24)
+	ec.SetCookie(jwtCookie)
+	//utils.SetUoloUserCookie(ec, oldId.(string))
 
 	return ec.JSON(http.StatusOK, DefaultRes{
 		Code:    0,

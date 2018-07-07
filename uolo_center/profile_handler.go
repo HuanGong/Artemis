@@ -31,8 +31,15 @@ type (
 	}
 )
 
+func loadDefault() *bytes.Buffer {
+	data, _ := ioutil.ReadFile("./data/profile/uolo.png")
+	buf := bytes.NewBuffer(data)
+	return buf
+}
+
 func NewProfileHandler(conf OptionConfig) *ProfileHandler {
 	keeper := avatar_keeper.NewAvatarKeeperWithFileStorage(conf.Path)
+	keeper.SaveNewProfilePhoto("common", loadDefault())
 	return &ProfileHandler{
 		config: conf,
 		keeper: keeper,
@@ -44,7 +51,6 @@ func (handler *ProfileHandler) RegisterRouter(ec *echo.Echo) {
 	ec.POST("/user/profile/save", handler.SaveUserProfile)
 	ec.POST("/user/profile/avatar/upload", handler.UploadProfilePhoto)
 	ec.GET("/user/profile/avatar", handler.GetProfilePhoto)
-
 }
 
 func (handler *ProfileHandler) SaveUserProfile(e echo.Context) error {
@@ -155,23 +161,19 @@ func (handler *ProfileHandler) UploadProfilePhoto(ec echo.Context) error {
 func (handler *ProfileHandler) GetProfilePhoto(ec echo.Context) error {
 	type (
 		In struct {
-			Standard string `query:"standard" form:"standard" binding:"required"`
+			Size string `query:"sz" form:"sz" binding:"required"`
 		}
 	)
 	userId, login := utils.IsUserLogin(ec)
 	if !login || len(userId) == 0 {
-		if defaultAvatar, err := ioutil.ReadFile(handler.config.DefaultAvatar); err == nil {
-			return ec.Blob(http.StatusOK, "image/png", defaultAvatar)
-		} else {
-			return echo.ErrNotFound
-		}
+		userId = "common"
 	}
 	in := &In{}
 	if err := ec.Bind(in); err != nil {
-		return echo.ErrUnsupportedMediaType
+		return echo.ErrNotFound
 	}
 	level := avatar_keeper.KAvatarMiddle
-	switch in.Standard {
+	switch in.Size {
 	case "small":
 		level = avatar_keeper.KAvatarSmall
 	case "middle":

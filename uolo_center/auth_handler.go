@@ -77,7 +77,6 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 		Name:     form.Name,
 		Email:    form.Email,
 		NickName: form.Name,
-		Avatar:   form.Name, //TODO： gen avastinco path
 		Sex:      1,
 		Tags:     0,
 		Status:   0,
@@ -93,6 +92,7 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 
 	uuidGen, _ := uuid.NewV4()
 	user.Id = uuidGen.String()
+	user.Avatar = user.Id
 
 	if digest, err := bcrypt.GenerateFromPassword([]byte(form.Password), bcrypt.DefaultCost); err != nil {
 		return AbortWithError(ec, ErrFailedEncryptPsd, "签发密码失败")
@@ -260,6 +260,9 @@ func (handler *Handler) ResetPassword(ec echo.Context) error {
 
 	if userId != u.Id { //防止获取到别人用户名和密码的情况下，冒用别人的token来修改别人的密码
 		return AbortWithError(ec, ErrIncorrectPassword, "ID不匹配")
+	}
+	if form.New == form.Old {
+		return AbortWithError(ec, ErrIncorrectPassword, "新密码没有变动")
 	}
 
 	if form.New != form.Confirm || len(form.New) < 6 {

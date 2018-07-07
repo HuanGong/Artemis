@@ -91,11 +91,8 @@ func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 		TokenLookup: "cookie:_Authorization",
 		Skipper: func(c echo.Context) bool {
 			path := c.Path()
-
-			logrus.Debugln("Request Path:", c.Path())
-
 			if strings.HasPrefix(path, "/utils") {
-				logrus.Debugln("skipper jwt verify")
+				logrus.Debugln("skipper jwt for ", c.Path())
 				return true
 			} else if strings.HasPrefix(path, "/au/login") ||
 				strings.HasPrefix(path, "/au/signup") {
@@ -113,13 +110,13 @@ func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 	gr.POST("/signup", impl.authhandler.SignUp)
 	gr.POST("/login", impl.authhandler.Login)
 	gr.POST("/check", impl.authhandler.AuthTest)
-	gr.POST("/reauth", impl.authhandler.AuthRefresh)
+	gr.POST("/renew/auth", impl.authhandler.AuthRefresh)
 	gr.POST("/reset/passwd", impl.authhandler.ResetPassword)
 
 	gr.GET("/signup", impl.authhandler.SignUp)
 	gr.GET("/login", impl.authhandler.Login)
 	gr.GET("/check", impl.authhandler.AuthTest)
-	gr.GET("/reauth", impl.authhandler.AuthRefresh)
+	gr.GET("/renew/auth", impl.authhandler.AuthRefresh)
 	gr.GET("/reset/passwd", impl.authhandler.ResetPassword)
 
 	utilsGr := ec.Group("/utils")

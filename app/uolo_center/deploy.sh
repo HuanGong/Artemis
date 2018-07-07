@@ -51,6 +51,7 @@ fi
 
 cp restart.sh dist
 cp "$binFile" dist
+cp -r ./data  dist
 cp config_prd.toml dist/config.toml
 
 deployFile="$serviceName"_$(date "+%Y%m%d_%H%M%S").tar.gz

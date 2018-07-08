@@ -134,13 +134,13 @@ func (impl *UoloLens) HttpServerName() string {
 func (impl *UoloLens) OnHttpServerInitialized(ec *echo.Echo) error {
 
 	//ec.Use(middleware.CSRF())
-
 	ec.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{
 			"https://www.echoface.cn",
 			"https://blog.echoface.cn",
 			"https://api.echoface.cn",
 			"http://localhost:4200",
+			"http://localhost:3005",
 		},
 		AllowMethods:     []string{echo.GET, echo.POST, echo.HEAD, echo.DELETE, echo.OPTIONS, echo.PUT},
 		AllowCredentials: true,
@@ -153,16 +153,16 @@ func (impl *UoloLens) OnHttpServerInitialized(ec *echo.Echo) error {
 		Skipper:     impl.JwtSkipperChecker,
 	}))
 
-	ec.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(ec echo.Context) error {
-			logrus.Debugln("Cookie Viewer MiddleFunc >>>>>>>>>>>>>>>>>>>>>>> ")
-			for _, cookie := range ec.Cookies() {
-				logrus.Infof(" ===> %s : %s", cookie.Name, cookie.Value)
-			}
-			logrus.Debugln("Cookie Viewer MiddleFunc <<<<<<<<<<<<<<<<<<<<<<< ")
-			return next(ec)
-		}
-	})
+	//ec.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+	//	return func(ec echo.Context) error {
+	//		logrus.Debugln("Cookie Viewer MiddleFunc >>>>>>>>>>>>>>>>>>>>>>> ")
+	//		for _, cookie := range ec.Cookies() {
+	//			logrus.Infof(" ===> %s : %s", cookie.Name, cookie.Value)
+	//		}
+	//		logrus.Debugln("Cookie Viewer MiddleFunc <<<<<<<<<<<<<<<<<<<<<<< ")
+	//		return next(ec)
+	//	}
+	//})
 
 	// public
 
@@ -182,9 +182,6 @@ func (impl *UoloLens) OnHttpServerInitialized(ec *echo.Echo) error {
 
 	//private
 	ec.GET("/lenslist", impl.lensHandler.LensList)
-	//ec.POST("/article/new", impl.postHandler.ArticleNew)
-	//ec.POST("/article/mod", impl.postHandler.ArticleMod)
-	//ec.POST("/article/reproduce", impl.postHandler.ArticleNew)
 	ec.POST("/article/auto/publish", impl.postHandler.AutoPublish)
 
 	ThingsGr := ec.Group("/things/v1")

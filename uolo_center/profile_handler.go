@@ -59,10 +59,11 @@ func (handler *ProfileHandler) SaveUserProfile(e echo.Context) error {
 		Profile struct {
 			Id       string `json:"id" form:"id" binding:"required"`
 			Sex      int32  `json:"sex" form:"sex" binding:"required"`
-			NickName string `json:"nickName" form:"nickName" binding:"required"`
-			BirthDay string `json:"birthday" form:"birthday" binding:"required"`
+			Phone    string `json:"phone" form:"phone" binding:"required"`
+			BirthDay string `json:"birth" form:"birth" binding:"required"`
+			NickName string `json:"nickname" form:"nickname" binding:"required"`
 			//LivePlace  string `json:"livePlace" form:"livePlace" binding:"required"`
-			//Profession string `json:"profession" form:"profession" binding:"required"`
+			Profession string `json:"profession" form:"profession" binding:"required"`
 		}
 	)
 	in := &Profile{}
@@ -94,11 +95,11 @@ func (handler *ProfileHandler) SaveUserProfile(e echo.Context) error {
 
 	profile.Sex = in.Sex
 	profile.NickName = in.NickName
+	profile.Profession = in.Profession
 	if birth, err := time.Parse(time.RFC3339Nano, in.BirthDay); err == nil {
 		profile.Birth = birth
-	} else {
-		logrus.Errorln("Birth Day Parse Failed, ", in.BirthDay)
 	}
+	profile.Phone = in.Phone
 
 	if _, err := ormEngine.Update(profile); err != nil {
 		logrus.Errorln("xorm update error ", err.Error())

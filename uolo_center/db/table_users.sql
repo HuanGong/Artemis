@@ -16,6 +16,7 @@ CREATE TABLE `user_profile` (
   `status` int(2) NOT NULL DEFAULT '0' COMMENT '逻辑删除位',
   `createtime` datetime NOT NULL COMMENT '创建时间',
   `updatetime` datetime DEFAULT NULL,
+  `profession` varchar(20) DEFAULT 'secret'
   PRIMARY KEY (`id`),
   KEY `idx_username_password` (`username`,`password`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

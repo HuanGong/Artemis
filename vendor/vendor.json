@@ -9,6 +9,16 @@
 			"revisionTime": "2017-06-26T11:06:00Z"
 		},
 		{
+			"checksumSHA1": "l1dgFJfzGLG/2AEPyt6ADsnVLPQ=",
+			"path": "github.com/PuerkitoBio/goquery",
+			"revision": "dc2ec5c7ca4d9aae063b79b9f581dd3ea6afd2b2",
+			"revisionTime": "2018-06-07T15:06:10Z"
+		},
+		{
+			"path": "github.com/andybalholm/cascadia",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "0rido7hYHQtfq3UJzVT5LClLAWc=",
 			"path": "github.com/beorn7/perks/quantile",
 			"revision": "3a771d992973f24aa725d07868b467d1ddfceafb",
@@ -259,6 +269,14 @@
 			"revisionTime": "2018-06-25T19:10:44Z"
 		},
 		{
+			"path": "golang.org/x/image/font",
+			"revision": ""
+		},
+		{
+			"path": "golang.org/x/image/math/fixed",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "xHj7hC7bSAOdCF/aEfmFAK5i3ns=",
 			"path": "golang.org/x/image/tiff",
 			"revision": "cc896f830cedae125428bc9fe1b0362aa91b3fb1",
@@ -269,6 +287,10 @@
 			"path": "golang.org/x/image/tiff/lzw",
 			"revision": "cc896f830cedae125428bc9fe1b0362aa91b3fb1",
 			"revisionTime": "2018-06-25T19:10:44Z"
+		},
+		{
+			"path": "golang.org/x/net/html",
+			"revision": ""
 		},
 		{
 			"checksumSHA1": "USMsFbKZrNd1b9oRFbjevPr6PmI=",

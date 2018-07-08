@@ -8,3 +8,9 @@ User = "root"
 Passwd = "gonghuan"
 DBName = "uolo"
 HostPort = "127.0.0.1:3306"
+
+[[RedisConfig]]
+Name    = "verify"
+Addr     = "127.0.0.1:6379"
+DbIndex  = 10
+Password = ""

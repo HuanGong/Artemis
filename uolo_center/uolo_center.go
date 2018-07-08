@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/BurntSushi/toml"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-redis/redis"
 	"github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 	"github.com/labstack/echo"
@@ -13,13 +14,14 @@ import (
 )
 
 var (
-	appConf   Config
-	ormEngine *xorm.Engine
+	appConf      Config
+	ormEngine    *xorm.Engine
+	redisStorage map[string]*redis.Client
 )
 
 type (
 	UoloCenter struct {
-		authhandler    *Handler
+		authhandler    *AuthHandler
 		profileHandler *ProfileHandler
 		utilsHandler   *UtilsHandler
 	}
@@ -28,6 +30,7 @@ type (
 func init() {
 	loadConfig()
 	initStorageDB()
+	initRedisDb(appConf.RedisConfig)
 }
 
 func NewUoloCenter() *UoloCenter {
@@ -37,7 +40,7 @@ func NewUoloCenter() *UoloCenter {
 	}
 
 	instance := &UoloCenter{
-		authhandler:    &Handler{},
+		authhandler:    &AuthHandler{},
 		utilsHandler:   NewUtilsHandler(),
 		profileHandler: NewProfileHandler(conf),
 	}
@@ -74,16 +77,16 @@ func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 		AllowCredentials: true,
 	}))
 
-	ec.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(ec echo.Context) error {
-			logrus.Debugln("Cookie Viewer MiddleFunc >>>>>>>>>>>>>>>>>>>>>>> ")
-			for _, cookie := range ec.Cookies() {
-				logrus.Infof(" ===> %s : %s", cookie.Name, cookie.Value)
-			}
-			logrus.Debugln("Cookie Viewer MiddleFunc <<<<<<<<<<<<<<<<<<<<<<< ")
-			return next(ec)
-		}
-	})
+	//ec.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+	//	return func(ec echo.Context) error {
+	//		logrus.Debugln("Cookie Viewer MiddleFunc >>>>>>>>>>>>>>>>>>>>>>> ")
+	//		for _, cookie := range ec.Cookies() {
+	//			logrus.Infof(" ===> %s : %s", cookie.Name, cookie.Value)
+	//		}
+	//		logrus.Debugln("Cookie Viewer MiddleFunc <<<<<<<<<<<<<<<<<<<<<<< ")
+	//		return next(ec)
+	//	}
+	//})
 
 	ec.Use(middleware.JWTWithConfig(middleware.JWTConfig{
 		SigningKey:  []byte(appConf.JWTSecretkey),
@@ -92,9 +95,9 @@ func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 		Skipper: func(c echo.Context) bool {
 			path := c.Path()
 			if strings.HasPrefix(path, "/utils") {
-				logrus.Debugln("skipper jwt for ", c.Path())
 				return true
-			} else if strings.HasPrefix(path, "/au/login") ||
+			}
+			if strings.HasPrefix(path, "/au/login") ||
 				strings.HasPrefix(path, "/au/signup") {
 				return true
 			}
@@ -121,6 +124,8 @@ func (impl *UoloCenter) OnHttpServerInitialized(ec *echo.Echo) error {
 
 	utilsGr := ec.Group("/utils")
 	utilsGr.GET("/qrcode", impl.utilsHandler.GenQrcode)
+	utilsGr.GET("/captcha", impl.utilsHandler.GenCaptcha)
+	utilsGr.GET("/captcha/img", impl.utilsHandler.GenCaptchaImage)
 	utilsGr.GET("/cmtest", func(ec echo.Context) error {
 		cookies := ec.Cookies()
 		return ec.JSON(200, cookies)
@@ -166,4 +171,28 @@ func initStorageDB() {
 		logrus.Errorln("Ping Mysql Failed, Please Check Your Connection Config")
 	}
 	return
+}
+
+func initRedisDb(redisConf []RedisConfig) {
+	redisStorage = make(map[string]*redis.Client)
+
+	for _, conf := range redisConf {
+		rClient := redis.NewClient(&redis.Options{
+			Addr:     conf.Addr,
+			DB:       int(conf.DbIndex),
+			Password: conf.Password,
+		})
+
+		_, err := rClient.Ping().Result()
+		if err != nil {
+			logrus.Errorln("Connect To Redis Failed, server:", conf)
+			continue
+		}
+		if len(conf.Name) == 0 {
+			logrus.Errorln("Redis Config Must Need A Name")
+			continue
+		}
+		redisStorage[conf.Name] = rClient
+	}
+
 }

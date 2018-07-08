@@ -19,11 +19,11 @@ const (
 	ErrUserAlreadyExist  = -4
 	ErrIncorrectPassword = -5
 	ErrEmailFormatError  = -6
-	TokenMaxAge          = time.Hour * 12
+	TokenMaxAge          = time.Hour * 24
 )
 
 type (
-	Handler struct {
+	AuthHandler struct {
 	}
 	DefaultRes struct {
 		Code    int                `json:"code"`
@@ -47,7 +47,7 @@ func AbortWithError(c echo.Context, code int, message string) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-func (handler *Handler) SignUp(ec echo.Context) error {
+func (handler *AuthHandler) SignUp(ec echo.Context) error {
 	logrus.Infoln("SignUP enter")
 
 	type SignUpForm struct {
@@ -117,8 +117,8 @@ func (handler *Handler) SignUp(ec echo.Context) error {
 	})
 }
 
-func (handler *Handler) Login(ec echo.Context) error {
-	logrus.Debugln("Handler.Login Enter")
+func (handler *AuthHandler) Login(ec echo.Context) error {
+	logrus.Debugln("AuthHandler.Login Enter")
 
 	type LoginForm struct {
 		Name     string `form:"username" json:"username" binding:"required" query:"username"`
@@ -156,11 +156,10 @@ func (handler *Handler) Login(ec echo.Context) error {
 		return AbortWithError(ec, ErrFailedEncryptPsd, "Create Token faild")
 	}
 
-	jwtCookie := utils.GenHttpOnlyCookie("_Authorization", tokenString, ".echoface.cn", time.Hour*24)
-	ec.SetCookie(jwtCookie)
-	//utils.SetUoloUserCookie(ec, u.Id)
+	utils.SetJwtAuthCookie(ec, tokenString, ".echoface.cn")
+	utils.SetUoloUserCookieIfNeeded(ec, u.Id, ".echoface.cn")
 
-	logrus.Debugln("Handler.Login Leave Success")
+	logrus.Debugln("AuthHandler.Login Leave Success")
 	return ec.JSON(http.StatusOK, DefaultRes{
 		Code: 0,
 		User: u,
@@ -172,7 +171,7 @@ func (handler *Handler) Login(ec echo.Context) error {
 	})
 }
 
-func (handler *Handler) AuthRefresh(ec echo.Context) error {
+func (handler *AuthHandler) AuthRefresh(ec echo.Context) error {
 
 	oldToken := ec.Get("user").(*jwt.Token)
 	if oldToken == nil {
@@ -194,9 +193,8 @@ func (handler *Handler) AuthRefresh(ec echo.Context) error {
 		return AbortWithError(ec, ErrFailedEncryptPsd, "签发token失败")
 	}
 
-	jwtCookie := utils.GenHttpOnlyCookie("_Authorization", tokenString, ".echoface.cn", time.Hour*24)
-	ec.SetCookie(jwtCookie)
-	//utils.SetUoloUserCookie(ec, oldId.(string))
+	utils.SetJwtAuthCookie(ec, tokenString, ".echoface.cn")
+	utils.SetUoloUserCookieIfNeeded(ec, oldId.(string), ".echoface.cn")
 
 	return ec.JSON(http.StatusOK, DefaultRes{
 		Code:    0,
@@ -208,8 +206,8 @@ func (handler *Handler) AuthRefresh(ec echo.Context) error {
 	})
 }
 
-func (handler *Handler) AuthTest(ec echo.Context) error {
-	logrus.Debugln("Handler.AuthTest Enter")
+func (handler *AuthHandler) AuthTest(ec echo.Context) error {
+	logrus.Debugln("AuthHandler.AuthTest Enter")
 	for _, cookie := range ec.Cookies() {
 		logrus.Debugln("cookie: ", cookie)
 	}
@@ -222,7 +220,7 @@ func (handler *Handler) AuthTest(ec echo.Context) error {
 	claims := jwtToken.Claims.(jwt.MapClaims)
 	userUUID := claims["id"]
 
-	logrus.Debugf("Handler.AutoTest Leave For UserUUID:%s", userUUID.(string))
+	logrus.Debugf("AuthHandler.AutoTest Leave For UserUUID:%s", userUUID.(string))
 
 	return ec.JSON(http.StatusOK, DefaultRes{
 		Code:    0,
@@ -230,12 +228,12 @@ func (handler *Handler) AuthTest(ec echo.Context) error {
 	})
 }
 
-func (handler *Handler) ResetPassword(ec echo.Context) error {
+func (handler *AuthHandler) ResetPassword(ec echo.Context) error {
 	type CPswdForm struct {
-		Name    string `form:"name" json:"name" binding:"required"`
 		Old     string `form:"old" json:"old" binding:"required"`
 		New     string `form:"new" json:"new" binding:"required"`
 		Confirm string `form:"confirm" json:"confirm" binding:"required"`
+		Captcha string `form:"captcha" json:"captcha" binding:"required"`
 	}
 
 	token := ec.Get("user").(*jwt.Token)
@@ -249,18 +247,15 @@ func (handler *Handler) ResetPassword(ec echo.Context) error {
 	}
 
 	u := &model.UserProfile{}
-	found, err := ormEngine.Where("username = ?", form.Name).Get(u)
+	found, err := ormEngine.Where("id = ?", userId).Get(u)
 	if err != nil {
 		return AbortWithError(ec, ErrBadDatabaseQuery, "数据库错误")
 	}
 
 	if found == false || bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(form.Old)) != nil {
-		return AbortWithError(ec, ErrIncorrectPassword, "用户名或密码错误")
+		return AbortWithError(ec, ErrIncorrectPassword, "密码错误")
 	}
 
-	if userId != u.Id { //防止获取到别人用户名和密码的情况下，冒用别人的token来修改别人的密码
-		return AbortWithError(ec, ErrIncorrectPassword, "ID不匹配")
-	}
 	if form.New == form.Old {
 		return AbortWithError(ec, ErrIncorrectPassword, "新密码没有变动")
 	}
